@@ -18,7 +18,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
     username: '',
     email: '',
     password: '',
-    role: 'user',
+    role: 'student',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -141,7 +141,7 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="user">User</SelectItem>
+                <SelectItem value="student">Student</SelectItem>
                 <SelectItem value="instructor">Instructor</SelectItem>
                 <SelectItem value="admin">Admin</SelectItem>
               </SelectContent>
