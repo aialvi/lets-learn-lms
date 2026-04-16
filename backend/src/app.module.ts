@@ -9,6 +9,7 @@ import { LessonsModule } from './lessons/lessons.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { ProgressModule } from './progress/progress.module';
 import { AdminModule } from './admin/admin.module';
+import { QuizzesModule } from './quizzes/quizzes.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
@@ -24,6 +25,7 @@ import { PrismaModule } from './prisma/prisma.module';
     EnrollmentsModule,
     ProgressModule,
     AdminModule,
+    QuizzesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
