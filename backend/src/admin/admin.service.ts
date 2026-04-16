@@ -13,6 +13,7 @@ import * as bcrypt from 'bcrypt';
 export class AdminService {
   constructor(private prisma: PrismaService) {
     this.createSuperAdminIfNotExists();
+    this.createTeacherAccountIfNotExists();
   }
 
   private async createSuperAdminIfNotExists() {
@@ -34,6 +35,29 @@ export class AdminService {
         },
       });
       console.log('Super admin created');
+    }
+  }
+
+  private async createTeacherAccountIfNotExists() {
+    const teacherExists = await this.prisma.user.findFirst({
+      where: {
+        email: 'teacher@teacher.com',
+      },
+    });
+
+    if (!teacherExists) {
+      const hashedPassword = await bcrypt.hash('password', 10);
+      const teacher = await this.prisma.user.create({
+        data: {
+          email: 'teacher@teacher.com',
+          password: hashedPassword,
+          role: 'instructor',
+          firstName: 'John',
+          lastName: 'Doe',
+          username: 'teacher',
+        },
+      });
+      console.log('Teacher account created: teacher@teacher.com / password');
     }
   }
 
