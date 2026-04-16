@@ -70,11 +70,11 @@ export function SignInForm() {
             htmlFor='username'
             className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
           >
-            Username
+            Username or Email
           </label>
           <Input
             id='username'
-            placeholder='johndoe'
+            placeholder='johndoe or john@example.com'
             {...register('username')}
             disabled={isLoading}
           />
