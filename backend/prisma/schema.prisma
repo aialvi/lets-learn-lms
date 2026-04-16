@@ -20,7 +20,6 @@ model User {
   enrollments    Enrollment[]
   courses        Course[]        @relation("AuthoredCourses")
   videoProgress  VideoProgress[]
-  quizAttempts   QuizAttempt[]
 }
 
 model Course {
@@ -35,7 +34,6 @@ model Course {
   lessons        Lesson[]
   enrollments    Enrollment[]
   videoProgress  VideoProgress[]
-  quizzes        Quiz[]
 }
 
 model Lesson {
@@ -79,70 +77,4 @@ model VideoProgress {
   updatedAt  DateTime @updatedAt
 
   @@unique([userId, lessonId])
-}
-
-model Quiz {
-  id          String     @id @default(uuid())
-  title       String
-  description String?
-  courseId    String
-  course      Course     @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  questions   Question[]
-  attempts    QuizAttempt[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-}
-
-model Question {
-  id        String   @id @default(uuid())
-  quizId    String
-  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  type      String   // "multiple_choice" or "true_false"
-  text      String
-  order     Int
-  options   Option[]
-  responses QuestionResponse[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Option {
-  id          String   @id @default(uuid())
-  questionId  String
-  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  text        String
-  isCorrect   Boolean
-  order       Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model QuizAttempt {
-  id          String             @id @default(uuid())
-  quizId      String
-  quiz        Quiz               @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  userId      String
-  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  score       Float              @default(0)
-  totalPoints Float              @default(0)
-  status      String             @default("in_progress") // "in_progress", "completed"
-  startedAt   DateTime           @default(now())
-  completedAt DateTime?
-  responses   QuestionResponse[]
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-
-  @@unique([quizId, userId])
-}
-
-model QuestionResponse {
-  id            String      @id @default(uuid())
-  attemptId     String
-  attempt       QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  questionId    String
-  question      Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  selectedOptionId String?
-  isCorrect     Boolean?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
 }
