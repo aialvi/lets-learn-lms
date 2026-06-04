@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -57,10 +58,11 @@ export function SignInForm() {
   }
 
   return (
-    <div className='w-full max-w-md space-y-6 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md'>
-      <div className='space-y-2 text-center'>
-        <h1 className='text-3xl font-bold'>Sign In</h1>
-        <p className='text-gray-500 dark:text-gray-400'>
+    <div className='w-full max-w-md space-y-6 rounded-lg border bg-card p-6'>
+      <div className='space-y-2'>
+        <p className='eyebrow'>Welcome back</p>
+        <h1 className='text-3xl font-semibold tracking-tight text-foreground'>Sign in</h1>
+        <p className='text-sm leading-6 text-muted-foreground'>
           Enter your credentials to access your account
         </p>
       </div>
@@ -68,7 +70,7 @@ export function SignInForm() {
         <div className='space-y-2'>
           <label
             htmlFor='username'
-            className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
+            className='text-sm font-medium text-foreground'
           >
             Username
           </label>
@@ -79,39 +81,35 @@ export function SignInForm() {
             disabled={isLoading}
           />
           {errors.username && (
-            <p className='text-sm text-red-500'>{errors.username.message}</p>
+            <p className='text-sm text-destructive'>{errors.username.message}</p>
           )}
         </div>
         <div className='space-y-2'>
           <label
             htmlFor='password'
-            className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
+            className='text-sm font-medium text-foreground'
           >
             Password
           </label>
           <Input
             id='password'
             type='password'
-            placeholder='••••••••'
+            placeholder='Password'
             {...register('password')}
             disabled={isLoading}
           />
           {errors.password && (
-            <p className='text-sm text-red-500'>{errors.password.message}</p>
+            <p className='text-sm text-destructive'>{errors.password.message}</p>
           )}
         </div>
-        <Button type='submit' className='w-full' disabled={isLoading}>
-          {isLoading ? 'Signing in...' : 'Sign In'}
+        <Button type='submit' className='w-full font-semibold' disabled={isLoading}>
+          {isLoading ? 'Signing in...' : 'Sign in'}
         </Button>
       </form>
-      <div className='text-center text-sm'>
-        <a
-          href='#'
-          className='text-primary hover:underline'
-          onClick={() => router.push('/auth/signup')}
-        >
+      <div className='text-center text-sm text-muted-foreground'>
+        <Link href='/auth/signup' className='font-medium text-primary hover:underline'>
           Don&apos;t have an account? Sign up
-        </a>
+        </Link>
       </div>
     </div>
   );

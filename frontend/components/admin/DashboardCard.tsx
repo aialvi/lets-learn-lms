@@ -1,22 +1,21 @@
-import { cn } from '@/lib/utils';
+import type { LucideIcon } from 'lucide-react';
 
 interface DashboardCardProps {
   title: string;
   value: number;
-  icon: string;
-  color: string;
+  icon: LucideIcon;
 }
 
-export function DashboardCard({ title, value, icon, color }: DashboardCardProps) {
+export function DashboardCard({ title, value, icon: Icon }: DashboardCardProps) {
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex items-center">
-        <div className={cn('text-3xl p-4 rounded-full mr-4', color)}>
-          {icon}
+    <div className="rounded-lg border bg-card p-5">
+      <div className="flex items-center gap-4">
+        <div className="flex size-11 items-center justify-center rounded-md border bg-background text-primary">
+          <Icon className="size-5" />
         </div>
         <div>
-          <h3 className="text-lg font-medium text-gray-500">{title}</h3>
-          <p className="text-3xl font-bold">{value}</p>
+          <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
+          <p className="text-3xl font-semibold tracking-tight text-foreground">{value}</p>
         </div>
       </div>
     </div>

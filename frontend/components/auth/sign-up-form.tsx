@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,10 +84,11 @@ export function SignUpForm() {
   }
 
   return (
-    <div className="w-full max-w-md space-y-6 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-      <div className="space-y-2 text-center">
-        <h1 className="text-3xl font-bold">Create an Account</h1>
-        <p className="text-gray-500 dark:text-gray-400">
+    <div className="w-full max-w-lg space-y-6 rounded-lg border bg-card p-6">
+      <div className="space-y-2">
+        <p className="eyebrow">Start learning</p>
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Create an account</h1>
+        <p className="text-sm leading-6 text-muted-foreground">
           Enter your information to create an account
         </p>
       </div>
@@ -95,7 +97,7 @@ export function SignUpForm() {
           <div className="space-y-2">
             <label
               htmlFor="firstName"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              className="text-sm font-medium text-foreground"
             >
               First Name
             </label>
@@ -106,13 +108,13 @@ export function SignUpForm() {
               disabled={isLoading}
             />
             {errors.firstName && (
-              <p className="text-sm text-red-500">{errors.firstName.message}</p>
+              <p className="text-sm text-destructive">{errors.firstName.message}</p>
             )}
           </div>
           <div className="space-y-2">
             <label
               htmlFor="lastName"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              className="text-sm font-medium text-foreground"
             >
               Last Name
             </label>
@@ -123,14 +125,14 @@ export function SignUpForm() {
               disabled={isLoading}
             />
             {errors.lastName && (
-              <p className="text-sm text-red-500">{errors.lastName.message}</p>
+              <p className="text-sm text-destructive">{errors.lastName.message}</p>
             )}
           </div>
         </div>
         <div className="space-y-2">
           <label
             htmlFor="username"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            className="text-sm font-medium text-foreground"
           >
             Username
           </label>
@@ -141,13 +143,13 @@ export function SignUpForm() {
             disabled={isLoading}
           />
           {errors.username && (
-            <p className="text-sm text-red-500">{errors.username.message}</p>
+            <p className="text-sm text-destructive">{errors.username.message}</p>
           )}
         </div>
         <div className="space-y-2">
           <label
             htmlFor="email"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            className="text-sm font-medium text-foreground"
           >
             Email
           </label>
@@ -159,13 +161,13 @@ export function SignUpForm() {
             disabled={isLoading}
           />
           {errors.email && (
-            <p className="text-sm text-red-500">{errors.email.message}</p>
+            <p className="text-sm text-destructive">{errors.email.message}</p>
           )}
         </div>
         <div className="space-y-2">
           <label
             htmlFor="password"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            className="text-sm font-medium text-foreground"
           >
             Password
           </label>
@@ -176,13 +178,13 @@ export function SignUpForm() {
             disabled={isLoading}
           />
           {errors.password && (
-            <p className="text-sm text-red-500">{errors.password.message}</p>
+            <p className="text-sm text-destructive">{errors.password.message}</p>
           )}
         </div>
         <div className="space-y-2">
           <label
             htmlFor="confirmPassword"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            className="text-sm font-medium text-foreground"
           >
             Confirm Password
           </label>
@@ -193,21 +195,17 @@ export function SignUpForm() {
             disabled={isLoading}
           />
           {errors.confirmPassword && (
-            <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>
+            <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
           )}
         </div>
-        <Button type="submit" className="w-full" disabled={isLoading}>
+        <Button type="submit" className="w-full font-semibold" disabled={isLoading}>
           {isLoading ? "Creating account..." : "Create Account"}
         </Button>
       </form>
-      <div className="text-center text-sm">
-        <a
-          href="#"
-          className="text-primary hover:underline"
-          onClick={() => router.push("/auth/signin")}
-        >
+      <div className="text-center text-sm text-muted-foreground">
+        <Link href="/auth/signin" className="font-medium text-primary hover:underline">
           Already have an account? Sign in
-        </a>
+        </Link>
       </div>
     </div>
   );

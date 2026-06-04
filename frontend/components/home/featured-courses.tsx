@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { ArrowRight, BookOpen, User, Users } from "lucide-react";
 import { fetchCourses } from "@/lib/api";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, User, Users } from "lucide-react";
 import { truncateText } from "@/lib/utils";
 
 interface Course {
@@ -29,7 +28,6 @@ export function FeaturedCourses() {
     const loadCourses = async () => {
       try {
         const data = await fetchCourses();
-        // Get only 3 courses for featured section
         setCourses(data.slice(0, 3));
       } catch (error) {
         console.error("Error loading courses:", error);
@@ -42,78 +40,73 @@ export function FeaturedCourses() {
   }, []);
 
   return (
-    <section className="py-16 bg-gray-50 dark:bg-gray-900">
-      <div className="container px-4 md:px-6">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold tracking-tight mb-4">Featured Courses</h2>
-          <p className="text-muted-foreground max-w-3xl mx-auto">
-            Explore our most popular courses and start your learning journey today
-          </p>
+    <section className="border-b bg-card py-20">
+      <div className="container-page">
+        <div className="mb-10 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+          <div className="space-y-3">
+            <span className="eyebrow">Featured courses</span>
+            <h2 className="max-w-2xl text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+              Start with courses built around real outcomes.
+            </h2>
+          </div>
+          <Button asChild variant="outline" className="w-fit font-semibold">
+            <Link href="/courses">
+              View catalog
+              <ArrowRight className="size-4" />
+            </Link>
+          </Button>
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="animate-pulse">
-                <CardHeader className="space-y-2">
-                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                </CardContent>
-                <CardFooter>
-                  <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
-                </CardFooter>
-              </Card>
+              <div key={i} className="h-72 animate-pulse rounded-lg border bg-background p-5">
+                <div className="mb-8 h-9 w-9 rounded-md bg-muted" />
+                <div className="mb-3 h-5 w-4/5 rounded bg-muted" />
+                <div className="h-16 rounded bg-muted" />
+              </div>
+            ))}
+          </div>
+        ) : courses.length > 0 ? (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {courses.map((course) => (
+              <Link key={course.id} href={`/courses/${course.id}`} className="group">
+                <article className="flex h-full min-h-72 flex-col rounded-lg border bg-background p-5 transition-colors hover:border-primary/45">
+                  <div className="mb-6 flex items-center justify-between">
+                    <span className="flex size-10 items-center justify-center rounded-md border bg-card text-primary">
+                      <BookOpen className="size-5" />
+                    </span>
+                    <span className="rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                      {course._count.lessons} lessons
+                    </span>
+                  </div>
+                  <div className="flex-1 space-y-3">
+                    <h3 className="text-xl font-semibold leading-7 text-foreground group-hover:text-primary">
+                      {course.title}
+                    </h3>
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      {truncateText(course.description || "No description available", 130)}
+                    </p>
+                  </div>
+                  <div className="mt-8 flex items-center justify-between border-t pt-4 text-xs text-muted-foreground">
+                    <span className="inline-flex items-center gap-1.5">
+                      <User className="size-3.5" />
+                      {course.author.username}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <Users className="size-3.5" />
+                      {course._count.enrollments}
+                    </span>
+                  </div>
+                </article>
+              </Link>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {courses.length > 0 ? (
-              courses.map((course) => (
-                <Card key={course.id}>
-                  <CardHeader>
-                    <CardTitle>{course.title}</CardTitle>
-                    <CardDescription className="flex items-center gap-1">
-                      <User className="h-4 w-4" /> {course.author.username}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">
-                      {truncateText(course.description || "No description available", 120)}
-                    </p>
-                    <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <BookOpen className="h-4 w-4" />
-                        <span>{course._count.lessons} lessons</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Users className="h-4 w-4" />
-                        <span>{course._count.enrollments} enrolled</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button asChild className="w-full cursor-pointer">
-                      <Link href={`/courses/${course.id}`}>View Course</Link>
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))
-            ) : (
-              <div className="col-span-3 text-center py-12">
-                <p className="text-muted-foreground">No courses available at the moment.</p>
-              </div>
-            )}
+          <div className="rounded-lg border bg-background p-10 text-center text-sm text-muted-foreground">
+            No courses available at the moment.
           </div>
         )}
-
-        <div className="text-center mt-12">
-          <Button asChild variant="outline" size="lg">
-            <Link href="/courses">View All Courses</Link>
-          </Button>
-        </div>
       </div>
     </section>
   );

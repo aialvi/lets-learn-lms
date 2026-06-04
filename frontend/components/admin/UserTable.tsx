@@ -44,7 +44,7 @@ export function UserTable({ users, onUpdate, onDelete }: UserTableProps) {
               <TableCell>{user.email}</TableCell>
               <TableCell>{user.role}</TableCell>
               <TableCell>
-                <span className={`px-2 py-1 rounded text-xs ${user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                <span className={`rounded-md border px-2 py-1 text-xs font-medium ${user.isActive ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground'}`}>
                   {user.isActive ? 'Active' : 'Inactive'}
                 </span>
               </TableCell>

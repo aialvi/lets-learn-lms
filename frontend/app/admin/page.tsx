@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { BookOpen, GraduationCap, ListVideo, Users } from 'lucide-react';
 import { DashboardCard } from '@/components/admin/DashboardCard';
 import api from '@/lib/api';
 
@@ -35,37 +36,36 @@ export default function AdminDashboard() {
   }, []);
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-full">Loading...</div>;
+    return <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Loading...</div>;
   }
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mt-16 mb-6">Admin Dashboard</h1>
+      <div className="mb-6">
+        <p className="eyebrow">Overview</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">Admin dashboard</h1>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <DashboardCard
           title="Total Users"
           value={stats.users}
-          icon="👤"
-          color="bg-blue-100"
+          icon={Users}
         />
         <DashboardCard
           title="Total Courses"
           value={stats.courses}
-          icon="📚"
-          color="bg-green-100"
+          icon={BookOpen}
         />
         <DashboardCard
           title="Total Lessons"
           value={stats.lessons}
-          icon="📝"
-          color="bg-yellow-100"
+          icon={ListVideo}
         />
         <DashboardCard
           title="Total Enrollments"
           value={stats.enrollments}
-          icon="🎓"
-          color="bg-purple-100"
+          icon={GraduationCap}
         />
       </div>
     </div>

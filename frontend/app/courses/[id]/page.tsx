@@ -2,6 +2,8 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { fetchCourseById } from '@/lib/api';
 import CourseDetailContent from '@/components/courses/course-detail-content';
+import { Footer } from '@/components/layout/footer';
+import { MainNav } from '@/components/layout/main-nav';
 
 export async function generateMetadata({
   params,
@@ -35,7 +37,15 @@ export default async function CourseDetailPage({
   
   try {
     const course = await fetchCourseById(id);
-    return <CourseDetailContent course={course} />;
+    return (
+      <div className="flex min-h-screen flex-col bg-background">
+        <MainNav />
+        <main className="flex-1">
+          <CourseDetailContent course={course} />
+        </main>
+        <Footer />
+      </div>
+    );
   } catch {
     notFound();
   }

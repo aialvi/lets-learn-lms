@@ -23,7 +23,7 @@ export default function AdminLayout({
 
   if (isLoading) {
     return (
-      <div className='flex items-center justify-center min-h-screen'>
+      <div className='flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground'>
         Loading...
       </div>
     );
@@ -34,12 +34,12 @@ export default function AdminLayout({
   }
 
   return (
-    <div className='min-h-screen w-full bg-gray-100'>
+    <div className='min-h-screen w-full bg-background'>
       <Header toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
       <div className='flex'>
         <Sidebar isOpen={isSidebarOpen} />
         <main
-          className={`flex-1 p-6 transition-all duration-300 ${
+          className={`flex-1 p-6 pt-24 transition-all duration-300 ${
             isSidebarOpen ? 'ml-64' : 'ml-0'
           }`}
         >

@@ -20,9 +20,9 @@ export default function SignInPage() {
   // Show loading state while checking authentication
   if (status === 'loading') {
     return (
-      <div className="flex flex-col min-h-screen">
+      <div className="flex min-h-screen flex-col bg-background">
         <MainNav />
-        <main className="flex-1 flex items-center justify-center py-12">
+        <main className="flex flex-1 items-center justify-center px-5 py-16">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
             <p>Loading...</p>
@@ -39,9 +39,9 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex min-h-screen flex-col bg-background">
       <MainNav />
-      <main className="flex-1 flex items-center justify-center py-12">
+      <main className="flex flex-1 items-center justify-center px-5 py-16">
         <SignInForm />
       </main>
       <Footer />

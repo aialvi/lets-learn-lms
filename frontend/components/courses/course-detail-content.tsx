@@ -112,10 +112,10 @@ export default function CourseDetailContent({ course }: { course: Course }) {
   };
 
   return (
-    <div className='container py-10 px-4 md:px-6'>
+    <div className='container-page py-12'>
       <Button
         variant='ghost'
-        className='mt-16 mb-6'
+        className='mb-6'
         onClick={() => router.push('/courses')}
       >
         <ArrowLeft className='mr-2 h-4 w-4' /> Back to courses
@@ -123,10 +123,10 @@ export default function CourseDetailContent({ course }: { course: Course }) {
 
       <div className='grid gap-8 md:grid-cols-[2fr_1fr]'>
         <div>
-          <h1 className='text-3xl font-bold tracking-tight mb-2'>
+          <h1 className='mb-3 text-4xl font-semibold tracking-tight text-foreground'>
             {course.title}
           </h1>
-          <div className='flex items-center gap-2 text-muted-foreground mb-6'>
+          <div className='mb-8 flex flex-wrap items-center gap-2 text-sm text-muted-foreground'>
             <User className='h-4 w-4' />
             <span>Created by {course.author.username}</span>
             <span className='text-muted-foreground mx-2'>•</span>
@@ -140,15 +140,15 @@ export default function CourseDetailContent({ course }: { course: Course }) {
               <TabsTrigger value='curriculum'>Curriculum</TabsTrigger>
             </TabsList>
             <TabsContent value='overview' className='py-4'>
-              <div className='prose dark:prose-invert max-w-none'>
-                <h3>About This Course</h3>
-                <p>
+              <div className='rounded-lg border bg-card p-6'>
+                <h3 className='text-lg font-semibold text-foreground'>About this course</h3>
+                <p className='mt-3 leading-7 text-muted-foreground'>
                   {course.description ||
                     'No description available for this course.'}
                 </p>
 
-                <h3 className='mt-8'>What You&apos;ll Learn</h3>
-                <ul>
+                <h3 className='mt-8 text-lg font-semibold text-foreground'>What you&apos;ll learn</h3>
+                <ul className='mt-4 space-y-3 text-sm text-muted-foreground'>
                   <li>Gain hands-on experience with practical exercises</li>
                   <li>Build real-world projects for your portfolio</li>
                   <li>Learn at your own pace with on-demand video lectures</li>
@@ -172,7 +172,7 @@ export default function CourseDetailContent({ course }: { course: Course }) {
                         <CardContent className='p-4'>
                           <div className='flex items-center justify-between'>
                             <div className='flex items-center gap-3'>
-                              <div className='bg-muted flex items-center justify-center w-8 h-8 rounded-full shrink-0'>
+                              <div className='flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-sm font-medium'>
                                 {index + 1}
                               </div>
                               <div>
@@ -189,7 +189,7 @@ export default function CourseDetailContent({ course }: { course: Course }) {
                                 <PlayCircle className="h-4 w-4 text-primary" />
                               )}
                               {isEnrolled ? (
-                                <CheckCircle className='h-4 w-4 text-green-500' />
+                                <CheckCircle className='h-4 w-4 text-primary' />
                               ) : (
                                 <Lock className='h-4 w-4 text-muted-foreground' />
                               )}
@@ -211,7 +211,7 @@ export default function CourseDetailContent({ course }: { course: Course }) {
         </div>
 
         <div>
-          <Card className='sticky top-6'>
+          <Card className='sticky top-24'>
             <CardHeader>
               <CardTitle>Join This Course</CardTitle>
               <CardDescription>Enroll now to start learning</CardDescription>
@@ -229,15 +229,15 @@ export default function CourseDetailContent({ course }: { course: Course }) {
               </div>
               <div className='space-y-2 text-sm'>
                 <div className='flex items-center gap-2'>
-                  <CheckCircle className='h-4 w-4 text-green-500' />
+                  <CheckCircle className='h-4 w-4 text-primary' />
                   <span>Full lifetime access</span>
                 </div>
                 <div className='flex items-center gap-2'>
-                  <CheckCircle className='h-4 w-4 text-green-500' />
+                  <CheckCircle className='h-4 w-4 text-primary' />
                   <span>Access on mobile and desktop</span>
                 </div>
                 <div className='flex items-center gap-2'>
-                  <CheckCircle className='h-4 w-4 text-green-500' />
+                  <CheckCircle className='h-4 w-4 text-primary' />
                   <span>Project files & resources</span>
                 </div>
               </div>

@@ -170,15 +170,15 @@ export default function DashboardPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className='flex flex-col min-h-screen items-center'>
+      <div className='flex flex-col min-h-screen bg-background'>
         <MainNav />
         <main className='flex-1 flex items-center justify-center py-12'>
           <div className='container mx-auto px-4 py-8'>
             <div className='animate-pulse'>
-              <div className='h-8 bg-gray-200 rounded w-1/4 mb-6'></div>
+              <div className='h-8 bg-muted rounded w-1/4 mb-6'></div>
               <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-8'>
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className='h-32 bg-gray-200 rounded-lg'></div>
+                  <div key={i} className='h-32 bg-muted rounded-lg'></div>
                 ))}
               </div>
             </div>
@@ -191,14 +191,14 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <div className='flex flex-col min-h-screen items-center'>
+      <div className='flex flex-col min-h-screen bg-background'>
         <MainNav />
         <main className='flex-1 flex items-center justify-center py-12'>
           <div className='container mx-auto px-4 py-8'>
             <Card>
               <CardContent className='pt-6'>
                 <div className='text-center py-8'>
-                  <p className='text-red-600 mb-4'>{error}</p>
+                  <p className='mb-4 text-destructive'>{error}</p>
                   <Button onClick={() => window.location.reload()}>
                     Try Again
                   </Button>
@@ -213,15 +213,15 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className='flex flex-col min-h-screen items-center'>
+    <div className='flex flex-col min-h-screen bg-background'>
       <MainNav />
       <main className='flex-1 w-full'>
-        <div className='container mx-auto px-4 py-8 max-w-7xl'>
+        <div className='container-page py-12'>
           <div className='mb-8'>
-            <h1 className='text-3xl font-bold text-gray-900 mb-2'>
+            <h1 className='mb-2 text-3xl font-semibold tracking-tight text-foreground'>
               Welcome back, {session?.user?.name || 'Student'}!
             </h1>
-            <p className='text-gray-600'>Continue your learning journey</p>
+            <p className='text-muted-foreground'>Continue your learning journey</p>
           </div>
 
           {/* Stats Cards */}
@@ -231,11 +231,11 @@ export default function DashboardPage() {
                 <CardTitle className='text-sm font-medium'>
                   Enrolled Courses
                 </CardTitle>
-                <BookOpen className='h-4 w-4 text-blue-600' />
+                <BookOpen className='h-4 w-4 text-primary' />
               </CardHeader>
               <CardContent>
                 <div className='text-2xl font-bold'>{enrollments.length}</div>
-                <p className='text-xs text-gray-500'>Active learning paths</p>
+                <p className='text-xs text-muted-foreground'>Active learning paths</p>
               </CardContent>
             </Card>
 
@@ -244,11 +244,11 @@ export default function DashboardPage() {
                 <CardTitle className='text-sm font-medium'>
                   Watch Time
                 </CardTitle>
-                <Clock className='h-4 w-4 text-green-600' />
+                <Clock className='h-4 w-4 text-primary' />
               </CardHeader>
               <CardContent>
                 <div className='text-2xl font-bold'>{getTotalWatchTime()}</div>
-                <p className='text-xs text-gray-500'>Minutes watched</p>
+                <p className='text-xs text-muted-foreground'>Minutes watched</p>
               </CardContent>
             </Card>
 
@@ -257,13 +257,13 @@ export default function DashboardPage() {
                 <CardTitle className='text-sm font-medium'>
                   Completed Lessons
                 </CardTitle>
-                <Trophy className='h-4 w-4 text-yellow-600' />
+                <Trophy className='h-4 w-4 text-primary' />
               </CardHeader>
               <CardContent>
                 <div className='text-2xl font-bold'>
                   {getCompletedLessons()}
                 </div>
-                <p className='text-xs text-gray-500'>Lessons finished</p>
+                <p className='text-xs text-muted-foreground'>Lessons finished</p>
               </CardContent>
             </Card>
           </div>
@@ -279,11 +279,11 @@ export default function DashboardPage() {
                 <Card>
                   <CardContent className='pt-6'>
                     <div className='text-center py-8'>
-                      <BookOpen className='h-16 w-16 text-gray-400 mx-auto mb-4' />
-                      <h3 className='text-lg font-semibold text-gray-900 mb-2'>
+                      <BookOpen className='h-16 w-16 text-muted-foreground mx-auto mb-4' />
+                      <h3 className='text-lg font-semibold text-foreground mb-2'>
                         No courses yet
                       </h3>
-                      <p className='text-gray-600 mb-4'>
+                      <p className='text-muted-foreground mb-4'>
                         Start learning by enrolling in a course
                       </p>
                       <Button asChild>
@@ -313,7 +313,7 @@ export default function DashboardPage() {
                     return (
                       <Card
                         key={enrollment.id}
-                        className='hover:shadow-lg transition-shadow'
+                        className='transition-colors hover:border-primary/45'
                       >
                         <CardHeader>
                           <div className='flex items-start justify-between'>
@@ -321,7 +321,7 @@ export default function DashboardPage() {
                               <CardTitle className='text-lg mb-2'>
                                 {enrollment.course.title}
                               </CardTitle>
-                              <p className='text-sm text-gray-600 mb-2'>
+                              <p className='text-sm text-muted-foreground mb-2'>
                                 by {enrollment.course.author.firstName}{' '}
                                 {enrollment.course.author.lastName}
                               </p>
@@ -342,7 +342,7 @@ export default function DashboardPage() {
                           <div className='space-y-4'>
                             <div>
                               <Progress value={progress} className='h-2' />
-                              <p className='text-xs text-gray-500 mt-1'>
+                              <p className='text-xs text-muted-foreground mt-1'>
                                 {Array.isArray(courseProgress)
                                   ? courseProgress.filter((p) => p.completed)
                                       .length
@@ -352,11 +352,11 @@ export default function DashboardPage() {
                             </div>
 
                             {nextLesson && (
-                              <div className='bg-blue-50 p-3 rounded-lg'>
-                                <p className='text-sm font-medium text-blue-900 mb-1'>
+                              <div className='bg-accent p-3 rounded-lg'>
+                                <p className='text-sm font-medium text-accent-foreground mb-1'>
                                   Next lesson:
                                 </p>
-                                <p className='text-sm text-blue-700'>
+                                <p className='text-sm text-accent-foreground'>
                                   {nextLesson.title}
                                 </p>
                               </div>
@@ -402,25 +402,25 @@ export default function DashboardPage() {
                 <CardContent>
                   {getRecentActivity().length === 0 ? (
                     <div className='text-center py-8'>
-                      <Clock className='h-16 w-16 text-gray-400 mx-auto mb-4' />
-                      <p className='text-gray-600'>No recent activity</p>
+                      <Clock className='h-16 w-16 text-muted-foreground mx-auto mb-4' />
+                      <p className='text-muted-foreground'>No recent activity</p>
                     </div>
                   ) : (
                     <div className='space-y-4'>
                       {getRecentActivity().map((enrollment) => (
                         <div
                           key={enrollment.id}
-                          className='flex items-center justify-between p-4 bg-gray-50 rounded-lg'
+                          className='flex items-center justify-between p-4 bg-muted rounded-lg'
                         >
                           <div className='flex items-center space-x-3'>
-                            <div className='bg-blue-100 p-2 rounded-full'>
-                              <BookOpen className='h-4 w-4 text-blue-600' />
+                            <div className='bg-accent p-2 rounded-full'>
+                              <BookOpen className='h-4 w-4 text-primary' />
                             </div>
                             <div>
                               <p className='font-medium'>
                                 {enrollment.course.title}
                               </p>
-                              <p className='text-sm text-gray-600'>
+                              <p className='text-sm text-muted-foreground'>
                                 Enrolled{' '}
                                 {new Date(
                                   enrollment.createdAt

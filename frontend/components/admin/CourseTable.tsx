@@ -81,10 +81,10 @@ export function CourseTable({
               <TableCell>{course.instructor?.username || 'Unknown'}</TableCell>
               <TableCell>
                 <span
-                  className={`px-2 py-1 rounded text-xs ${
+                  className={`rounded-md border px-2 py-1 text-xs font-medium ${
                     course.isPublished
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-yellow-100 text-yellow-800'
+                      ? 'bg-accent text-accent-foreground'
+                      : 'bg-muted text-muted-foreground'
                   }`}
                 >
                   {course.isPublished ? 'Published' : 'Draft'}
