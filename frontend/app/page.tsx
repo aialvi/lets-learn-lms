@@ -6,6 +6,7 @@ import { MainNav } from '@/components/layout/main-nav';
 import { Footer } from '@/components/layout/footer';
 import { HeroSection } from '@/components/home/hero-section';
 import { FeaturedCourses } from '@/components/home/featured-courses';
+import { GrowthFeatures } from '@/components/home/growth-features';
 
 export default function Home() {
   return (
@@ -14,6 +15,7 @@ export default function Home() {
       <main className='flex-1 w-full'>
         <HeroSection />
         <FeaturedCourses />
+        <GrowthFeatures />
 
         <section className="bg-background py-20">
           <div className="container-page">

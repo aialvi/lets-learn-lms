@@ -1,303 +1,259 @@
-# Let's Learn - Learning Management System
+# Let's Learn LMS
 
-A modern, full-stack learning management system built with Next.js, NestJS, and Prisma. This platform enables users to create, manage, and consume educational content through an intuitive web interface.
+A full-stack learning management system built with Next.js, NestJS, Prisma, and SQLite. The product includes course delivery, video progress tracking, admin management, learner dashboards, and AI-powered study coach.
 
-## 🚀 Features
+## Features
 
-### For Students
-- **Course Discovery**: Browse and search through available courses
-- **Video Learning**: Watch video lessons with progress tracking
-- **Progress Tracking**: Monitor your learning progress across courses
-- **Dashboard**: Personal dashboard showing enrolled courses and statistics
-- **User Profile**: Manage your personal information and learning history
+### Learners
+- Browse courses and view course details.
+- Enroll in courses and continue lessons from the dashboard.
+- Track video watch time, completed lessons, and course progress.
+- Use the learner cockpit for skill readiness, microlearning drills, and recent activity.
+- Ask the AI study coach for lesson-aware guidance, quizzes, study plans, and proof-of-learning prompts.
 
-### For Instructors/Authors
-- **Course Creation**: Create and manage educational courses
-- **Lesson Management**: Add video lessons with descriptions and ordering
-- **Content Organization**: Structure courses with multiple lessons
-- **Student Analytics**: View enrollment statistics for your courses
+### Growth LMS Features
+- Skills-based learning paths and recommended next actions.
+- AI coach workflow backed by OpenRouter.
+- Microlearning drills for recall and retention.
+- Learner health signals based on progress and completion activity.
+- Credential and social-learning positioning on the homepage.
 
-### For Administrators
-- **User Management**: Create, update, and delete user accounts
-- **Course Management**: Full CRUD operations for courses
-- **Lesson Management**: Complete lesson lifecycle management
-- **Analytics Dashboard**: View system-wide statistics and metrics
-- **Role-based Access**: Control access based on user roles (student, instructor, admin)
+### Admin
+- Manage users, courses, and lessons.
+- View platform-level dashboard stats.
+- Role-based access for students, instructors, and admins.
 
-### Technical Features
-- **Authentication**: JWT-based authentication with NextAuth.js
-- **Video Progress**: Track watch time and completion status
-- **Responsive Design**: Mobile-friendly interface with Tailwind CSS
-- **Real-time Updates**: Dynamic content updates and progress tracking
-- **API Documentation**: Swagger/OpenAPI documentation for the REST API
-- **Database Migrations**: Prisma-based database management
-
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Frontend
-- **Framework**: Next.js 15 with App Router
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **UI Components**: Radix UI primitives
-- **Authentication**: NextAuth.js
-- **State Management**: React hooks and context
-- **HTTP Client**: Axios
+- Next.js 15 App Router
+- React 19
+- TypeScript
+- Tailwind CSS
+- Radix UI primitives
+- NextAuth.js
+- Axios
 
 ### Backend
-- **Framework**: NestJS
-- **Language**: TypeScript
-- **Database**: SQLite (with Prisma ORM)
-- **Authentication**: JWT with Passport.js
-- **API Documentation**: Swagger/OpenAPI
-- **Validation**: Class-validator and class-transformer
+- NestJS
+- TypeScript
+- Prisma ORM
+- SQLite for local development
+- Passport JWT authentication
+- Swagger/OpenAPI docs
+- OpenRouter chat completions API
 
-### Database
-- **ORM**: Prisma
-- **Database**: SQLite (development)
-- **Migrations**: Prisma Migrate
+## Project Structure
 
-## 📁 Project Structure
-
-```
+```text
 lets-learn/
-├── backend/                 # NestJS backend application
+├── backend/
+│   ├── prisma/
 │   ├── src/
-│   │   ├── admin/          # Admin management module
-│   │   ├── auth/           # Authentication module
-│   │   ├── courses/        # Course management module
-│   │   ├── enrollments/    # Enrollment management module
-│   │   ├── lessons/        # Lesson management module
-│   │   ├── progress/       # Progress tracking module
-│   │   ├── users/          # User management module
-│   │   └── prisma/         # Prisma service
-│   ├── prisma/             # Database schema and migrations
+│   │   ├── admin/
+│   │   ├── ai/
+│   │   ├── auth/
+│   │   ├── courses/
+│   │   ├── enrollments/
+│   │   ├── lessons/
+│   │   ├── progress/
+│   │   ├── prisma/
+│   │   └── users/
+│   ├── .env.example
 │   └── package.json
-├── frontend/               # Next.js frontend application
-│   ├── app/                # App router pages
-│   │   ├── admin/          # Admin panel pages
-│   │   ├── auth/           # Authentication pages
-│   │   ├── courses/        # Course pages
-│   │   ├── dashboard/      # User dashboard
-│   │   └── profile/        # User profile
-│   ├── components/         # Reusable UI components
-│   │   ├── admin/          # Admin-specific components
-│   │   ├── auth/           # Authentication components
-│   │   ├── courses/        # Course-related components
-│   │   ├── home/           # Homepage components
-│   │   ├── layout/         # Layout components
-│   │   └── ui/             # Base UI components
-│   ├── lib/                # Utility functions and API client
+├── frontend/
+│   ├── app/
+│   ├── components/
+│   ├── lib/
+│   ├── .env.example
 │   └── package.json
 └── README.md
 ```
 
-## 🚀 Getting Started
+## Prerequisites
 
-### Prerequisites
-- Node.js 18 or higher
-- npm or yarn or pnpm
+- Node.js 18 or newer
+- npm for the backend
+- pnpm or npm for the frontend
+- OpenRouter API key for live AI coach responses
 
-### Installation
+## Environment Setup
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd lets-learn
-   ```
+Create local env files from the examples:
 
-2. **Install backend dependencies**
-   ```bash
-   cd backend
-   npm install
-   ```
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env.local
+```
 
-3. **Install frontend dependencies**
-   ```bash
-   cd ../frontend
-   npm install
-   ```
+### Backend `.env`
 
-4. **Set up the database**
-   ```bash
-   cd ../backend
-   npx prisma generate
-   npx prisma migrate deploy
-   ```
+```env
+PORT=3001
+FRONTEND_URL=http://localhost:3000
+JWT_SECRET=change-me-in-production
+OPENROUTER_API_KEY=
+OPENROUTER_MODEL=openrouter/auto
+```
 
-5. **Environment Variables**
-   
-   Create `.env` files in both backend and frontend directories:
-   
-   **Backend (.env):**
-   ```env
-   DATABASE_URL="file:./dev.db"
-   JWT_SECRET=your-jwt-secret-here
-   ```
-   
-   **Frontend (.env.local):**
-   ```env
-   NEXT_PUBLIC_API_URL=http://localhost:3001
-   NEXTAUTH_URL=http://localhost:3000
-   NEXTAUTH_SECRET=your-nextauth-secret-here
-   ```
+Set `OPENROUTER_API_KEY` to a real key from https://openrouter.ai/keys to enable the AI study coach. Keep real keys out of git.
 
-### Running the Application
+### Frontend `.env.local`
 
-1. **Start the backend server**
-   ```bash
-   cd backend
-   npm run start:dev
-   ```
-   The backend will run on http://localhost:3001
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=change-me-in-production
+```
 
-2. **Start the frontend development server**
-   ```bash
-   cd frontend
-   npm run dev
-   ```
-   The frontend will run on http://localhost:3000
+## Install
 
-3. **Access the application**
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:3001
-   - API Documentation: http://localhost:3001/api
+```bash
+cd backend
+npm install
 
-## 📊 Database Schema
+cd ../frontend
+pnpm install
+```
 
-The application uses the following main entities:
+If you prefer npm in the frontend, use `npm install`; the repo currently includes a pnpm lockfile.
 
-- **User**: Stores user information and authentication data
-- **Course**: Contains course information and metadata
-- **Lesson**: Individual lessons within courses
-- **Enrollment**: Links users to courses they're enrolled in
-- **VideoProgress**: Tracks video watch progress for each user and lesson
+## Database
 
-## 🔐 Authentication & Authorization
+```bash
+cd backend
+npx prisma generate
+npx prisma migrate deploy
+```
 
-- **JWT Authentication**: Secure token-based authentication
-- **Role-based Access**: Three user roles supported:
-  - `student`: Default role for learners
-  - `instructor`: Can create and manage courses
-  - `admin`: Full system access
-- **Protected Routes**: API endpoints and frontend pages are protected based on user roles
+For local schema changes during development:
 
-## 🎯 API Endpoints
+```bash
+npx prisma migrate dev
+```
 
-### Authentication
-- `POST /auth/register` - User registration
-- `POST /auth/login` - User login
+## Run Locally
+
+Start the backend:
+
+```bash
+cd backend
+npm run start:dev
+```
+
+Start the frontend:
+
+```bash
+cd frontend
+pnpm dev
+```
+
+Local URLs:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:3001
+- Swagger docs: http://localhost:3001/api
+
+## AI Study Coach
+
+The dashboard AI Coach tab calls:
+
+```text
+POST /ai/study-coach
+```
+
+The endpoint:
+- Requires JWT authentication.
+- Reads `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` from backend env.
+- Enriches the learner prompt with enrolled courses, lessons, video progress, and watch time.
+- Sends a bounded chat completion request to OpenRouter.
+- Returns the coach response, model, generation id, and token usage when provided.
+
+The default model is:
+
+```env
+OPENROUTER_MODEL=openrouter/auto
+```
+
+You can replace it with a specific OpenRouter model id.
+
+## Main API Areas
+
+### Auth
+- `POST /auth/register`
+- `POST /auth/login`
 
 ### Courses
-- `GET /courses` - Get all courses
-- `GET /courses/:id` - Get course by ID
-- `POST /courses` - Create new course (auth required)
-- `PUT /courses/:id` - Update course (auth required)
-- `DELETE /courses/:id` - Delete course (auth required)
+- `GET /courses`
+- `GET /courses/:id`
+- `POST /courses`
+- `PATCH /courses/:id`
+- `DELETE /courses/:id`
 
 ### Lessons
-- `GET /lessons` - Get lessons (filtered by course)
-- `POST /lessons` - Create new lesson (auth required)
-- `PUT /lessons/:id` - Update lesson (auth required)
-- `DELETE /lessons/:id` - Delete lesson (auth required)
+- `GET /lessons`
+- `POST /lessons`
+- `PATCH /lessons/:id`
+- `DELETE /lessons/:id`
 
 ### Enrollments
-- `POST /enrollments` - Enroll in course (auth required)
-- `GET /enrollments/my-courses` - Get user's enrolled courses (auth required)
-- `PUT /enrollments/progress` - Update course progress (auth required)
+- `POST /enrollments`
+- `GET /enrollments/my-courses`
+- `PUT /enrollments/progress`
+- `GET /enrollments/:courseId/status`
+
+### Progress
+- `GET /progress/video/:courseId`
+- `GET /progress/video/lesson/:lessonId`
+- `PUT /progress/video`
+
+### AI
+- `POST /ai/study-coach`
 
 ### Admin
-- `GET /admin/dashboard` - Get admin dashboard stats (admin only)
-- `GET /admin/users` - Get all users (admin only)
-- `POST /admin/users` - Create user (admin only)
-- `GET /admin/courses` - Get all courses (admin only)
-- `GET /admin/lessons` - Get all lessons (admin only)
+- `GET /admin/dashboard`
+- `GET /admin/users`
+- `POST /admin/users`
+- `GET /admin/courses`
+- `POST /admin/courses`
+- `GET /admin/lessons`
+- `POST /admin/lessons`
 
-## 🎨 UI Components
+## Scripts
 
-The frontend uses a comprehensive design system built with:
-- **Radix UI**: Accessible, unstyled UI primitives
-- **Tailwind CSS**: Utility-first CSS framework
-- **Lucide Icons**: Beautiful, customizable icons
-- **Responsive Design**: Mobile-first approach
+### Backend
 
-## 📱 Pages Overview
-
-### Public Pages
-- **Home**: Landing page with featured courses
-- **Courses**: Browse all available courses
-- **Auth**: Sign in and sign up pages
-
-### Protected Pages
-- **Dashboard**: Personal learning dashboard
-- **Profile**: User profile management
-- **Course Detail**: Individual course page with lessons
-- **Video Player**: Video lesson player with progress tracking
-
-### Admin Pages
-- **Admin Dashboard**: System overview and statistics
-- **User Management**: CRUD operations for users
-- **Course Management**: CRUD operations for courses
-- **Lesson Management**: CRUD operations for lessons
-
-## 🔧 Development
-
-### Backend Scripts
 ```bash
-npm run start:dev    # Start development server
-npm run build        # Build for production
-npm run start:prod   # Start production server
-npm run test         # Run tests
-npm run lint         # Run ESLint
+npm run start:dev
+npm run build
+npm run start:prod
+npm run test
+npm run lint
 ```
 
-### Frontend Scripts
+### Frontend
+
 ```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run start        # Start production server
-npm run lint         # Run ESLint
+pnpm dev
+pnpm build
+pnpm start
+pnpm lint
 ```
 
-### Database Operations
+## Verification
+
+Run both builds before shipping:
+
 ```bash
-npx prisma generate  # Generate Prisma client
-npx prisma migrate dev  # Create and apply migration
-npx prisma studio    # Open Prisma Studio
+cd backend
+npm run build
+
+cd ../frontend
+pnpm build
 ```
 
-## 🚢 Deployment
+## Deployment Notes
 
-### Backend Deployment
-1. Build the application: `npm run build`
-2. Set production environment variables
-3. Deploy to your preferred hosting service
-4. Run database migrations: `npx prisma migrate deploy`
-
-### Frontend Deployment
-1. Build the application: `npm run build`
-2. Set production environment variables
-3. Deploy to Vercel, Netlify, or your preferred hosting service
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgments
-
-- [Next.js](https://nextjs.org/) for the amazing React framework
-- [NestJS](https://nestjs.com/) for the powerful Node.js framework
-- [Prisma](https://prisma.io/) for the excellent ORM
-- [Tailwind CSS](https://tailwindcss.com/) for the utility-first CSS framework
-- [Radix UI](https://radix-ui.com/) for the accessible UI components
-
-## 📧 Contact
-
-For questions or support, please open an issue in the GitHub repository.
+- Set production `JWT_SECRET`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `FRONTEND_URL`, and `OPENROUTER_API_KEY`.
+- Run `npx prisma migrate deploy` during backend deployment.
+- Restart the backend after changing OpenRouter env values.
+- Do not expose `OPENROUTER_API_KEY` to the frontend. The frontend should call the protected backend AI endpoint.

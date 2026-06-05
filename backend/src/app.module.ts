@@ -10,6 +10,7 @@ import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { ProgressModule } from './progress/progress.module';
 import { AdminModule } from './admin/admin.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { PrismaModule } from './prisma/prisma.module';
     EnrollmentsModule,
     ProgressModule,
     AdminModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [AppService],

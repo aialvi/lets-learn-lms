@@ -10,7 +10,13 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   BookOpen,
+  Brain,
   Clock,
+  Flame,
+  MessageSquareText,
+  Route,
+  Sparkles,
+  Target,
   Trophy,
   TrendingUp,
   Play,
@@ -19,7 +25,12 @@ import {
 import Link from 'next/link';
 import { MainNav } from '@/components/layout/main-nav';
 import { Footer } from '@/components/layout/footer';
-import { fetchEnrollments, getCourseVideosProgress } from '@/lib/api';
+import {
+  fetchEnrollments,
+  getCourseVideosProgress,
+  requestStudyCoach,
+} from '@/lib/api';
+import { coachPrompts, microChallenges, skillTracks } from '@/lib/growth-features';
 
 interface Course {
   id: string;
@@ -61,6 +72,9 @@ export default function DashboardPage() {
   >({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [coachLoadingPrompt, setCoachLoadingPrompt] = useState<string | null>(null);
+  const [coachResponse, setCoachResponse] = useState<string | null>(null);
+  const [coachError, setCoachError] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -168,6 +182,79 @@ export default function DashboardPage() {
     return completed;
   };
 
+  const getAverageProgress = () => {
+    if (enrollments.length === 0) return 0;
+    const total = enrollments.reduce((sum, enrollment) => {
+      return sum + calculateCourseProgress(enrollment.course.id, enrollment.course.lessons?.length || 0);
+    }, 0);
+    return Math.round(total / enrollments.length);
+  };
+
+  const getLearningStreak = () => {
+    const activeDays = new Set(
+      enrollments.map((enrollment) =>
+        new Date(enrollment.createdAt).toLocaleDateString()
+      )
+    );
+    return Math.max(1, Math.min(7, activeDays.size || getCompletedLessons()));
+  };
+
+  const getLearnerHealth = () => {
+    const averageProgress = getAverageProgress();
+    const completedLessons = getCompletedLessons();
+    if (averageProgress >= 70 || completedLessons >= 5) {
+      return {
+        label: 'On track',
+        detail: 'Keep the current cadence and add one proof-of-work artifact.',
+      };
+    }
+    if (enrollments.length > 0 && completedLessons === 0) {
+      return {
+        label: 'Needs first win',
+        detail: 'Start with a 10-minute lesson and complete one recall drill today.',
+      };
+    }
+    return {
+      label: 'Building momentum',
+      detail: 'Use microlearning drills to turn course starts into weekly progress.',
+    };
+  };
+
+  const getRecommendedTrack = () => {
+    const titles = enrollments.map((enrollment) => enrollment.course.title.toLowerCase()).join(' ');
+    if (titles.includes('design') || titles.includes('marketing')) return skillTracks[2];
+    if (titles.includes('business') || titles.includes('product')) return skillTracks[1];
+    return skillTracks[0];
+  };
+
+  const learnerHealth = getLearnerHealth();
+  const recommendedTrack = getRecommendedTrack();
+
+  const handleCoachPrompt = async (prompt: string) => {
+    if (!session?.accessToken) return;
+
+    try {
+      setCoachLoadingPrompt(prompt);
+      setCoachError(null);
+      const response = await requestStudyCoach(
+        {
+          prompt,
+          intent: 'learner-dashboard-coaching',
+          recentCourseIds: enrollments.map((enrollment) => enrollment.course.id).slice(0, 3),
+        },
+        session.accessToken
+      );
+      setCoachResponse(response.content);
+    } catch (error) {
+      console.error('AI coach request failed:', error);
+      setCoachError(
+        'AI coach is unavailable. Check OPENROUTER_API_KEY on the backend and try again.'
+      );
+    } finally {
+      setCoachLoadingPrompt(null);
+    }
+  };
+
   if (status === 'loading' || loading) {
     return (
       <div className='flex flex-col min-h-screen bg-background'>
@@ -217,15 +304,28 @@ export default function DashboardPage() {
       <MainNav />
       <main className='flex-1 w-full'>
         <div className='container-page py-12'>
-          <div className='mb-8'>
-            <h1 className='mb-2 text-3xl font-semibold tracking-tight text-foreground'>
-              Welcome back, {session?.user?.name || 'Student'}!
-            </h1>
-            <p className='text-muted-foreground'>Continue your learning journey</p>
+          <div className='mb-8 grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end'>
+            <div>
+              <p className="eyebrow">Learner cockpit</p>
+              <h1 className='mt-2 mb-2 text-3xl font-semibold tracking-tight text-foreground'>
+                Welcome back, {session?.user?.name || 'Student'}.
+              </h1>
+              <p className='text-muted-foreground'>
+                Your AI-ready dashboard for skills, momentum, and measurable learning outcomes.
+              </p>
+            </div>
+            <div className="rounded-lg border bg-card p-4">
+              <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                Learner health
+              </p>
+              <p className="mt-2 text-xl font-semibold text-foreground">{learnerHealth.label}</p>
+              <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
+                {learnerHealth.detail}
+              </p>
+            </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-8'>
+          <div className='mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4'>
             <Card>
               <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
                 <CardTitle className='text-sm font-medium'>
@@ -266,11 +366,27 @@ export default function DashboardPage() {
                 <p className='text-xs text-muted-foreground'>Lessons finished</p>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                <CardTitle className='text-sm font-medium'>
+                  Skill Readiness
+                </CardTitle>
+                <Target className='h-4 w-4 text-primary' />
+              </CardHeader>
+              <CardContent>
+                <div className='text-2xl font-bold'>{getAverageProgress()}%</div>
+                <p className='text-xs text-muted-foreground'>Average path progress</p>
+              </CardContent>
+            </Card>
           </div>
 
           <Tabs defaultValue='courses' className='space-y-6'>
-            <TabsList className='grid w-full grid-cols-2'>
+            <TabsList className='grid w-full grid-cols-2 md:grid-cols-5'>
               <TabsTrigger value='courses'>My Courses</TabsTrigger>
+              <TabsTrigger value='skills'>Skill Plan</TabsTrigger>
+              <TabsTrigger value='coach'>AI Coach</TabsTrigger>
+              <TabsTrigger value='drills'>Drills</TabsTrigger>
               <TabsTrigger value='activity'>Recent Activity</TabsTrigger>
             </TabsList>
 
@@ -392,6 +508,173 @@ export default function DashboardPage() {
                   })}
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value='skills' className='space-y-6'>
+              <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <span className="flex size-10 items-center justify-center rounded-md bg-accent text-accent-foreground">
+                        <Route className="size-5" />
+                      </span>
+                      <div>
+                        <CardTitle>{recommendedTrack.name}</CardTitle>
+                        <p className="mt-1 text-sm text-muted-foreground">{recommendedTrack.fit}</p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-5">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium text-foreground">Readiness score</span>
+                        <span className="text-muted-foreground">{getAverageProgress()}%</span>
+                      </div>
+                      <Progress value={getAverageProgress()} className="h-2" />
+                    </div>
+                    <div className="rounded-md border bg-background p-4">
+                      <p className="text-sm font-semibold text-foreground">Next best action</p>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                        {recommendedTrack.nextAction}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Skill map</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      {recommendedTrack.skills.map((skill, index) => (
+                        <div key={skill} className="rounded-md border bg-background p-4">
+                          <div className="mb-3 flex items-center justify-between">
+                            <span className="flex size-8 items-center justify-center rounded-md bg-muted text-sm font-semibold">
+                              {index + 1}
+                            </span>
+                            <Badge variant={index === 0 ? 'default' : 'outline'}>
+                              {index === 0 ? 'Focus' : 'Next'}
+                            </Badge>
+                          </div>
+                          <p className="text-sm font-semibold text-foreground">{skill}</p>
+                          <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                            Connect this skill to a course outcome and proof artifact.
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value='coach' className='space-y-6'>
+              <div className="grid gap-6 lg:grid-cols-[1fr_0.85fr]">
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <span className="flex size-10 items-center justify-center rounded-md bg-accent text-accent-foreground">
+                        <Brain className="size-5" />
+                      </span>
+                      <div>
+                        <CardTitle>AI study coach</CardTitle>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          Prompt templates for tutoring, reflection, and adaptive study planning.
+                        </p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {coachPrompts.map((prompt) => (
+                        <button
+                          key={prompt}
+                          className="rounded-md border bg-background p-4 text-left text-sm leading-6 text-foreground transition-colors hover:border-primary/45"
+                          disabled={Boolean(coachLoadingPrompt)}
+                          onClick={() => handleCoachPrompt(prompt)}
+                          type="button"
+                        >
+                          <Sparkles className="mb-3 size-4 text-primary" />
+                          {coachLoadingPrompt === prompt ? 'Asking coach...' : prompt}
+                        </button>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Recommended intervention</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="rounded-md border bg-background p-4">
+                      <p className="text-sm font-semibold text-foreground">Coach response</p>
+                      {coachError ? (
+                        <p className="mt-2 text-sm leading-6 text-destructive">{coachError}</p>
+                      ) : coachResponse ? (
+                        <div className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
+                          {coachResponse}
+                        </div>
+                      ) : (
+                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                          Choose a prompt to get personalized guidance from OpenRouter using your course context.
+                        </p>
+                      )}
+                    </div>
+                    <div className="rounded-md border bg-background p-4">
+                      <p className="text-sm font-semibold text-foreground">Today&apos;s coaching goal</p>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                        Generate a short quiz from your next lesson, then complete one microdrill.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value='drills' className='space-y-6'>
+              <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <span className="flex size-10 items-center justify-center rounded-md bg-accent text-accent-foreground">
+                        <Flame className="size-5" />
+                      </span>
+                      <div>
+                        <CardTitle>{getLearningStreak()} day momentum</CardTitle>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          Lightweight practice loop for retention.
+                        </p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <Progress value={Math.min(100, getLearningStreak() * 14)} className="h-2" />
+                    <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                      Complete one drill after each lesson to convert passive watching into active recall.
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <div className="grid gap-4 md:grid-cols-3">
+                  {microChallenges.map((challenge) => (
+                    <Card key={challenge.title}>
+                      <CardHeader>
+                        <div className="flex items-center gap-3">
+                          <span className="flex size-9 items-center justify-center rounded-md border bg-background text-primary">
+                            <MessageSquareText className="size-4" />
+                          </span>
+                          <CardTitle className="text-base">{challenge.title}</CardTitle>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm leading-6 text-muted-foreground">{challenge.prompt}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
             </TabsContent>
 
             <TabsContent value='activity' className='space-y-6'>

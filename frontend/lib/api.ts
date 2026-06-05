@@ -284,4 +284,23 @@ export const updateVideoProgress = async (data: {
   }
 };
 
+export const requestStudyCoach = async (
+  data: {
+    prompt: string;
+    intent?: string;
+    courseId?: string;
+    recentCourseIds?: string[];
+  },
+  token: string
+) => {
+  setAuthToken(token);
+  try {
+    const response = await api.post('/ai/study-coach', data);
+    return response.data;
+  } catch (error) {
+    console.error('Error requesting AI study coach:', error);
+    throw error;
+  }
+};
+
 export default api;
