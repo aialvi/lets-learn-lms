@@ -11,31 +11,7 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AdminService {
-  constructor(private prisma: PrismaService) {
-    this.createSuperAdminIfNotExists();
-  }
-
-  private async createSuperAdminIfNotExists() {
-    const adminExists = await this.prisma.user.findFirst({
-      where: {
-        email: 'admin@admin.com',
-      },
-    });
-
-    if (!adminExists) {
-      const hashedPassword = await bcrypt.hash('password', 10);
-      const superAdmin = await this.prisma.user.create({
-        data: {
-          email: 'admin@admin.com',
-          password: hashedPassword,
-          role: 'admin',
-          firstName: 'Admin',
-          username: 'admin',
-        },
-      });
-      console.log('Super admin created');
-    }
-  }
+  constructor(private prisma: PrismaService) {}
 
   async getAllUsers() {
     return this.prisma.user.findMany({
@@ -77,6 +53,7 @@ export class AdminService {
         email,
         password: hashedPassword,
         role: role || 'student',
+        memberships: { create: { organizationId: 'default-academic', role: role === 'admin' ? 'admin' : role === 'instructor' ? 'instructor' : 'learner' } },
         username,
       },
     });
@@ -121,6 +98,7 @@ export class AdminService {
 
   async getAllCourses() {
     return this.prisma.course.findMany({
+      where: { organizationId: 'default-academic', isPublic: true },
       include: {
         author: {
           select: {
@@ -149,6 +127,7 @@ export class AdminService {
     return this.prisma.course.create({
       data: {
         title: courseData.title,
+        imageUrl: courseData.imageUrl || null,
         description: courseData.description,
         price: courseData.price || 0,
         authorId: instructorId,
@@ -168,6 +147,12 @@ export class AdminService {
   }
 
   async updateCourse(id: string, updateData: any) {
+    const { instructorId, isPublished, ...fields } = updateData;
+    updateData = {
+      ...fields,
+      ...(instructorId !== undefined ? { authorId: instructorId } : {}),
+      ...(isPublished !== undefined ? { isPublic: isPublished } : {}),
+    };
     const course = await this.prisma.course.findUnique({
       where: { id },
     });
@@ -218,6 +203,7 @@ export class AdminService {
 
   async getAllLessons() {
     return this.prisma.lesson.findMany({
+      where: { course: { organizationId: 'default-academic', isPublic: true } },
       include: {
         course: {
           select: {

@@ -1,3 +1,6 @@
+import { OrganizationsModule } from './organizations/organizations.module';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { LegacyAccessInterceptor } from './organizations/legacy-access.interceptor';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
@@ -18,6 +21,7 @@ import { AiModule } from './ai/ai.module';
       isGlobal: true,
     }),
     PrismaModule,
+    OrganizationsModule,
     UsersModule,
     CoursesModule,
     AuthModule,
@@ -28,6 +32,6 @@ import { AiModule } from './ai/ai.module';
     AiModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, { provide: APP_INTERCEPTOR, useClass: LegacyAccessInterceptor }],
 })
 export class AppModule {}

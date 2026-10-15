@@ -4,8 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, BookOpen, User, Users } from "lucide-react";
 import { fetchCourses } from "@/lib/api";
+import { CourseCover } from "@/components/courses/course-cover";
 
 interface Course {
+  imageUrl?: string | null;
   id: string;
   title: string;
   description: string;
@@ -87,6 +89,7 @@ export function CourseGrid() {
           {sortedCourses.map((course) => (
             <Link key={course.id} href={`/courses/${course.id}`} className="group">
               <article className="flex h-full min-h-72 flex-col rounded-lg border bg-card p-5 transition-colors hover:border-primary/45">
+                <CourseCover src={course.imageUrl} title={course.title} className="-mx-5 -mt-5 mb-5 aspect-video rounded-t-lg" />
                 <div className="mb-6 flex items-start justify-between">
                   <span className="flex size-10 items-center justify-center rounded-md border bg-background text-primary">
                     <BookOpen className="size-5" />

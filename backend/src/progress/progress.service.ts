@@ -44,7 +44,7 @@ export default class ProgressService {
 
   async getCoursesProgress(userId: number) {
     const enrollments = await this.prisma.enrollment.findMany({
-      where: { userId: userId.toString() },
+      where: { userId: userId.toString(), course: { organizationId: 'default-academic', isPublic: true } },
       include: {
         course: {
           select: {
@@ -69,7 +69,7 @@ export default class ProgressService {
       where: { id: dto.lessonId },
     });
 
-    if (!lesson) {
+    if (!lesson || lesson.courseId !== dto.courseId) {
       throw new NotFoundException('Lesson not found');
     }
 
@@ -129,6 +129,13 @@ export default class ProgressService {
       data: { progress },
     });
 
+    if (progress === 100 && totalLessons > 0) {
+      const course = await this.prisma.course.findUnique({ where: { id: dto.courseId }, include: { organization: true } });
+      if (course?.organizationId === 'default-academic' && JSON.parse(course.organization.modules).includes('certifications')) {
+        const previous = await this.prisma.certificate.findFirst({ where: { organizationId: 'default-academic', userId: userId.toString(), courseId: dto.courseId } });
+        if (!previous) await this.prisma.certificate.upsert({ where: { id: `academic-${enrollment.id}` }, update: {}, create: { id: `academic-${enrollment.id}`, organizationId: 'default-academic', userId: userId.toString(), courseId: dto.courseId, courseTitle: course.title, issuedAt: new Date() } });
+      }
+    }
     return videoProgress;
   }
 

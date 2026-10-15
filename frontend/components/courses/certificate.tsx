@@ -9,7 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Download, Award, ArrowLeft, CheckCircle } from 'lucide-react';
 import { 
-  fetchCourseById, 
+  fetchCourseById,
+  fetchCompletionCertificate,
   getCourseVideosProgress
 } from '@/lib/api';
 
@@ -28,7 +29,7 @@ interface CertificateProps {
 }
 
 export default function Certificate({ courseId }: CertificateProps) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const certificateRef = useRef<HTMLDivElement>(null);
   
@@ -61,11 +62,8 @@ export default function Certificate({ courseId }: CertificateProps) {
       setProgress(overallProgress);
       
       if (overallProgress >= 100) {
-        setCompletedAt(new Date().toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        }));
+        const record = await fetchCompletionCertificate(courseId, session!.accessToken);
+        setCompletedAt(record.issuedAt ? new Date(record.issuedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Historical issue date unavailable');
       } else {
         toast.error('You need to complete all lessons to get a certificate');
         router.push(`/courses/${courseId}`);
@@ -80,13 +78,14 @@ export default function Certificate({ courseId }: CertificateProps) {
   }, [courseId, session, router]);
 
   useEffect(() => {
+    if (status === 'loading') return;
     if (!session) {
       router.push('/auth/signin');
       return;
     }
     
     loadCertificateData();
-  }, [session, courseId, router, loadCertificateData]);
+  }, [status, session, courseId, router, loadCertificateData]);
 
   const generateCertificate = async () => {
     if (!certificateRef.current) return;

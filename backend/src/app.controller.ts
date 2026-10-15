@@ -1,3 +1,4 @@
+import { RegisterDto } from './auth/register.dto';
 import {
   Controller,
   Request,
@@ -25,7 +26,7 @@ export class AppController {
   }
 
   @Post('auth/register')
-  async register(@Body() registerDto: any) {
+  async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
 

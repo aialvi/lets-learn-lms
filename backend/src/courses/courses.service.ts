@@ -8,7 +8,10 @@ export class CoursesService {
   async create(data: any, authorId: string) {
     return this.prisma.course.create({
       data: {
-        ...data,
+        title: data.title,
+        imageUrl: data.imageUrl || null,
+        description: data.description,
+        price: data.price || 0,
         authorId,
       },
       include: {
@@ -24,6 +27,7 @@ export class CoursesService {
 
   async findAll() {
     return this.prisma.course.findMany({
+      where: { organizationId: 'default-academic', isPublic: true },
       include: {
         author: {
           select: {

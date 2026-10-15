@@ -17,7 +17,7 @@ export function MainNav() {
   };
 
   const navItems = [
-    ...(session ? [{ name: "Dashboard", path: "/dashboard" }] : []),
+    ...(session ? [{ name: "Dashboard", path: "/dashboard" }, { name: "Organizations", path: "/organizations" }] : []),
     { name: "Browse", path: "/courses" },
   ];
 

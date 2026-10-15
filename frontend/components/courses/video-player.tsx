@@ -30,7 +30,7 @@ interface VideoPlayerProps {
 }
 
 export default function VideoPlayer({ courseId, lessonId }: VideoPlayerProps) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
 
   const [course, setCourse] = useState<Course | null>(null);
@@ -99,13 +99,14 @@ export default function VideoPlayer({ courseId, lessonId }: VideoPlayerProps) {
   }, [courseId, lessonId, session, router]);
 
   useEffect(() => {
+    if (status === 'loading') return;
     if (!session) {
       router.push('/auth/signin');
       return;
     }
 
     loadCourseData();
-  }, [session, loadCourseData, router]);
+  }, [status, session, loadCourseData, router]);
 
   const extractYouTubeId = (url: string): string | null => {
     const regExp =

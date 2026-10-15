@@ -54,7 +54,7 @@ export class EnrollmentsService {
 
   async getUserEnrollments(userId: number) {
     return this.prisma.enrollment.findMany({
-      where: { userId: userId.toString() },
+      where: { userId: userId.toString(), course: { organizationId: 'default-academic', isPublic: true } },
       include: {
         course: {
           include: {
@@ -98,6 +98,14 @@ export class EnrollmentsService {
       where: { id: enrollment.id },
       data: { progress },
     });
+  }
+
+  async certificate(userId: string, courseId: string) {
+    const organization = await this.prisma.organization.findUnique({ where: { id: 'default-academic' } });
+    if (!organization || !JSON.parse(organization.modules).includes('certifications')) throw new NotFoundException('Certification module unavailable');
+    const certificate = await this.prisma.certificate.findFirst({ where: { organizationId: 'default-academic', userId, courseId } });
+    if (!certificate) throw new NotFoundException('Complete the course to receive a certificate');
+    return certificate;
   }
 
   async unenroll(userId: number, courseId: string) {

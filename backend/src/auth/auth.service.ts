@@ -48,7 +48,7 @@ export class AuthService {
     // Check if user already exists
     const existingUser = await this.prisma.user.findFirst({
       where: {
-        OR: [{ email: userData.email }, { username: userData.username }],
+        OR: [{ email: userData.email.toLowerCase() }, { username: userData.username }],
       },
     });
 
@@ -63,10 +63,11 @@ export class AuthService {
     const newUser = await this.prisma.user.create({
       data: {
         username: userData.username,
-        email: userData.email,
+        email: userData.email.toLowerCase(),
         password: hashedPassword,
         firstName: userData.firstName,
         lastName: userData.lastName,
+        memberships: { create: { organizationId: 'default-academic', role: 'learner' } },
       },
     });
 

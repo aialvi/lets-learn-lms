@@ -36,3 +36,4 @@ lerna-debug.log*
 
 #DB
 dev.db
+dev.db.backup-*

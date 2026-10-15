@@ -1,4 +1,4 @@
 export const jwtConstants = {
-  secret: 'STRONGER_SECRET_KEY_HERE', // In production, use environment variables
+  secret: process.env.JWT_SECRET || 'development-only-change-before-deploying',
   expiresIn: '1d', // Extend token expiration time
 };

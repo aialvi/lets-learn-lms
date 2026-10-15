@@ -32,6 +32,10 @@ export class EnrollmentsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get(':courseId/certificate')
+  certificate(@Param('courseId') courseId: string, @Request() req) { return this.enrollmentsService.certificate(req.user.id, courseId); }
+
+  @UseGuards(JwtAuthGuard)
   @Delete(':courseId')
   unenroll(@Param('courseId') courseId: string, @Request() req) {
     return this.enrollmentsService.unenroll(req.user.id, courseId);

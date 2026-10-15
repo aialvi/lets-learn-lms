@@ -23,27 +23,27 @@ export class LessonsService {
     });
   }
 
-  async findAll(courseId: number) {
+  async findAll(courseId: string) {
     return this.prisma.lesson.findMany({
-      where: { courseId: courseId.toString() },
+      where: { ...(courseId ? { courseId } : {}), course: { organizationId: 'default-academic', isPublic: true } },
       orderBy: { order: 'asc' }
     });
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     return this.prisma.lesson.findUnique({
       where: { id: id.toString() },
     });
   }
 
-  async update(id: number, data: any) {
+  async update(id: string, data: any) {
     return this.prisma.lesson.update({
       where: { id: id.toString() },
       data,
     });
   }
 
-  async remove(id: number) {
+  async remove(id: string) {
     return this.prisma.lesson.delete({
       where: { id: id.toString() },
     });

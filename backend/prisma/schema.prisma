@@ -17,12 +17,23 @@ model User {
   role           String          @default("student")
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
+  memberships    Membership[]
+  certificates   Certificate[]
   enrollments    Enrollment[]
   courses        Course[]        @relation("AuthoredCourses")
   videoProgress  VideoProgress[]
 }
 
 model Course {
+  imageUrl String?
+  organizationId String @default("default-academic")
+  organization Organization @relation(fields: [organizationId], references: [id])
+  isPublic Boolean @default(true)
+  quizJson String @default("")
+  certificationEnabled Boolean @default(false)
+  validityMonths Int?
+  renewalMode String @default("full")
+  assignments TrainingAssignment[]
   id             String          @id @default(uuid())
   title          String
   description    String?
@@ -77,4 +88,157 @@ model VideoProgress {
   updatedAt  DateTime @updatedAt
 
   @@unique([userId, lessonId])
+}
+
+
+model Organization {
+  id String @id @default(uuid())
+  name String
+  mode String @default("academic")
+  timezone String @default("UTC")
+  modules String @default("[]")
+  createdAt DateTime @default(now())
+  memberships Membership[]
+  courses Course[]
+  departments Department[]
+  teams Team[]
+  invitations Invitation[]
+  assignments TrainingAssignment[]
+  certificates Certificate[]
+  notifications Notification[]
+}
+
+model Membership {
+  id String @id @default(uuid())
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id])
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role String @default("learner")
+  active Boolean @default(true)
+  departmentId String?
+  department Department? @relation(fields: [departmentId], references: [id])
+  teams TeamMember[]
+  @@unique([organizationId, userId])
+}
+
+model Department {
+  id String @id @default(uuid())
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id])
+  name String
+  members Membership[]
+  teams Team[]
+  @@unique([organizationId, name])
+}
+
+model Team {
+  id String @id @default(uuid())
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id])
+  name String
+  departmentId String?
+  department Department? @relation(fields: [departmentId], references: [id])
+  members TeamMember[]
+  @@unique([organizationId, name])
+}
+
+model TeamMember {
+  teamId String
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  membershipId String
+  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  isManager Boolean @default(false)
+  @@id([teamId, membershipId])
+}
+
+model Invitation {
+  id String @id @default(uuid())
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id])
+  email String
+  role String
+  tokenHash String @unique
+  expiresAt DateTime
+  acceptedAt DateTime?
+  createdAt DateTime @default(now())
+}
+
+model TrainingAssignment {
+  id String @id @default(uuid())
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id])
+  courseId String
+  course Course @relation(fields: [courseId], references: [id])
+  userId String
+  sourceTeamId String?
+  createdAt DateTime @default(now())
+  cancelledAt DateTime?
+  cycles TrainingCycle[]
+  @@index([organizationId, userId])
+}
+
+model TrainingCycle {
+  id String @id @default(uuid())
+  assignmentId String
+  assignment TrainingAssignment @relation(fields: [assignmentId], references: [id])
+  sequence Int @default(1)
+  renewalOfId String? @unique
+  snapshot String
+  completedLessons String @default("[]")
+  mode String @default("full")
+  dueAt DateTime?
+  openedAt DateTime @default(now())
+  completedAt DateTime?
+  attempts QuizAttempt[]
+  certificate Certificate?
+  @@unique([assignmentId, sequence])
+}
+
+model QuizAttempt {
+  id String @id @default(uuid())
+  cycleId String
+  cycle TrainingCycle @relation(fields: [cycleId], references: [id])
+  answers String
+  score Float
+  passed Boolean
+  createdAt DateTime @default(now())
+}
+
+model Certificate {
+  id String @id @default(uuid())
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id])
+  userId String
+  user User @relation(fields: [userId], references: [id])
+  courseId String
+  courseTitle String
+  cycleId String? @unique
+  cycle TrainingCycle? @relation(fields: [cycleId], references: [id])
+  issuedAt DateTime?
+  expiresAt DateTime?
+  legacy Boolean @default(false)
+  @@index([organizationId, userId])
+}
+
+model Notification {
+  id String @id @default(uuid())
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id])
+  userId String?
+  recipient String
+  kind String
+  cycleId String?
+  invitationId String?
+  dedupeKey String @unique
+  subject String
+  message String
+  readAt DateTime?
+  emailStatus String @default("pending")
+  attempts Int @default(0)
+  nextAttemptAt DateTime @default(now())
+  lockedAt DateTime?
+  lastError String?
+  createdAt DateTime @default(now())
+  @@index([emailStatus, nextAttemptAt])
 }

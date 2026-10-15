@@ -34,7 +34,7 @@ export class AiService {
     private readonly prisma: PrismaService,
   ) {}
 
-  async createStudyCoachResponse(userId: string, dto: StudyCoachDto) {
+  async createStudyCoachResponse(userId: string, dto: StudyCoachDto, organizationId = 'default-academic') {
     const apiKey = this.config.get<string>('OPENROUTER_API_KEY');
     if (!apiKey) {
       throw new ServiceUnavailableException(
@@ -44,7 +44,7 @@ export class AiService {
 
     const model =
       this.config.get<string>('OPENROUTER_MODEL') || 'openrouter/auto';
-    const context = await this.getLearnerContext(userId, dto);
+    const context = await this.getLearnerContext(userId, dto, organizationId);
 
     const response = await fetch(this.endpoint, {
       method: 'POST',
@@ -101,7 +101,15 @@ export class AiService {
     };
   }
 
-  private async getLearnerContext(userId: string, dto: StudyCoachDto) {
+  private async getLearnerContext(userId: string, dto: StudyCoachDto, organizationId = 'default-academic') {
+    if (organizationId !== 'default-academic') {
+      const cycles = await this.prisma.trainingCycle.findMany({ where: { assignment: { organizationId, userId, cancelledAt: null, ...(dto.courseId ? { courseId: dto.courseId } : {}) } }, orderBy: { openedAt: 'desc' }, take: 5 });
+      if (dto.courseId && !cycles.length) throw new BadRequestException('You must have training assigned for this course');
+      return cycles.map(cycle => {
+        const snapshot = JSON.parse(cycle.snapshot);
+        return JSON.stringify({ course: snapshot.title, description: snapshot.description, lessons: snapshot.lessons.map(lesson => lesson.title), completedLessons: JSON.parse(cycle.completedLessons).length, completedAt: cycle.completedAt });
+      }).join('\n') || 'No assigned training yet.';
+    }
     const courseIds = [
       ...(dto.courseId ? [dto.courseId] : []),
       ...(dto.recentCourseIds || []),
@@ -110,6 +118,7 @@ export class AiService {
     const enrollments = await this.prisma.enrollment.findMany({
       where: {
         userId,
+        course: { organizationId },
         ...(courseIds.length ? { courseId: { in: courseIds } } : {}),
       },
       include: {

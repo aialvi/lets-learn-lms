@@ -57,7 +57,8 @@ export function SignUpForm() {
       
       toast.success("Account created! You can now sign in with your credentials.");
       
-      router.push("/auth/signin");
+      const destination = new URLSearchParams(window.location.search).get('callbackUrl');
+      router.push(destination?.startsWith('/') && !destination.startsWith('//') ? `/auth/signin?callbackUrl=${encodeURIComponent(destination)}` : '/auth/signin');
     } catch (error: unknown) {
       console.error("Registration error:", error);
       

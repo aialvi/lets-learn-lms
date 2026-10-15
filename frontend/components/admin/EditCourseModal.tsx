@@ -37,6 +37,7 @@ interface Instructor {
 }
 
 interface Course {
+  imageUrl?: string | null;
   id: number;
   title: string;
   description: string;
@@ -58,6 +59,7 @@ interface EditCourseModalProps {
 }
 
 const courseFormSchema = z.object({
+  imageUrl: z.union([z.string().url(), z.string().startsWith('/images/'), z.literal('')]).optional(),
   title: z.string().min(3, {
     message: 'Title must be at least 3 characters.',
   }),
@@ -87,6 +89,7 @@ export function EditCourseModal({
   const form = useForm<CourseFormValues>({
     resolver: zodResolver(courseFormSchema),
     defaultValues: {
+      imageUrl: course.imageUrl || '',
       title: course.title,
       description: course.description,
       price: course.price,
@@ -113,6 +116,9 @@ export function EditCourseModal({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <FormField control={form.control} name="imageUrl" render={({ field }) => (
+              <FormItem><FormLabel>Cover image URL</FormLabel><FormControl><Input placeholder="https://images.unsplash.com/…" {...field} /></FormControl><FormMessage /></FormItem>
+            )} />
             <FormField
               control={form.control}
               name="title"

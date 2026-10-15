@@ -46,7 +46,8 @@ export function SignInForm() {
         toast.error('Sign in failed. Please check your credentials and try again.');
       } else {
         toast.success('You have successfully signed in.');
-        router.push('/dashboard');
+        const destination = new URLSearchParams(window.location.search).get('callbackUrl');
+        router.push(destination?.startsWith('/') && !destination.startsWith('//') ? destination : '/dashboard');
         router.refresh();
       }
     } catch (error) {

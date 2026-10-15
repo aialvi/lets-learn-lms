@@ -2,7 +2,7 @@ import axios from 'axios';
 import { getSession } from 'next-auth/react';
 
 // Use a fixed API URL for debugging - change back to process.env.NEXT_PUBLIC_API_URL later
-const API_URL = 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 console.log('Using API URL:', API_URL);
 
 const api = axios.create({
@@ -304,3 +304,8 @@ export const requestStudyCoach = async (
 };
 
 export default api;
+
+export const fetchCompletionCertificate = async (courseId: string, token: string): Promise<{ issuedAt: string | null; legacy: boolean }> => {
+  const response = await api.get(`/enrollments/${courseId}/certificate`, { headers: { Authorization: `Bearer ${token}` } });
+  return response.data;
+};

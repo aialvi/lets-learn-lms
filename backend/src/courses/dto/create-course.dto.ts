@@ -1,7 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsNumber, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString, IsNumber, IsOptional, IsUrl } from 'class-validator';
 
 export class CreateCourseDto {
+  @ApiPropertyOptional({ description: 'Course cover image URL' })
+  @IsOptional()
+  @IsUrl()
+  imageUrl?: string;
+
   @ApiProperty({ description: 'Course title' })
   @IsNotEmpty()
   @IsString()

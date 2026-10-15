@@ -17,7 +17,7 @@ export default function CoursesManagement() {
     try {
       setIsLoading(true);
       const response = await api.get('/admin/courses');
-      setCourses(response.data);
+      setCourses(response.data.map((course: { author: unknown; isPublic: boolean }) => ({ ...course, instructor: course.author, isPublished: course.isPublic })));
     } catch (error) {
       console.error('Failed to fetch courses:', error);
     } finally {

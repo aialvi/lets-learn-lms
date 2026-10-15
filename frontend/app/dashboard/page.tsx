@@ -31,8 +31,10 @@ import {
   requestStudyCoach,
 } from '@/lib/api';
 import { coachPrompts, microChallenges, skillTracks } from '@/lib/growth-features';
+import { CourseCover } from '@/components/courses/course-cover';
 
 interface Course {
+  imageUrl?: string | null;
   id: string;
   title: string;
   description: string;
@@ -110,7 +112,7 @@ export default function DashboardPage() {
           } else if (progress && typeof progress === 'object') {
             // If it's an object, try to extract the array
             progressData[enrollment.course.id] =
-              progress.data || progress.progress || [];
+              progress.lessons?.map((lesson: { id: string; completed: boolean; watchTime: number }) => ({ lessonId: lesson.id, completed: lesson.completed, watchTime: lesson.watchTime })) || progress.data || progress.progress || [];
           } else {
             progressData[enrollment.course.id] = [];
           }
@@ -151,6 +153,7 @@ export default function DashboardPage() {
 
   const getRecentActivity = () => {
     return enrollments
+      .slice()
       .sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -382,7 +385,7 @@ export default function DashboardPage() {
           </div>
 
           <Tabs defaultValue='courses' className='space-y-6'>
-            <TabsList className='grid w-full grid-cols-2 md:grid-cols-5'>
+            <TabsList className='grid h-auto w-full grid-cols-2 md:grid-cols-5'>
               <TabsTrigger value='courses'>My Courses</TabsTrigger>
               <TabsTrigger value='skills'>Skill Plan</TabsTrigger>
               <TabsTrigger value='coach'>AI Coach</TabsTrigger>
@@ -431,6 +434,7 @@ export default function DashboardPage() {
                         key={enrollment.id}
                         className='transition-colors hover:border-primary/45'
                       >
+                        <CourseCover src={enrollment.course.imageUrl} title={enrollment.course.title} className="aspect-[16/6] rounded-t-lg" />
                         <CardHeader>
                           <div className='flex items-start justify-between'>
                             <div className='flex-1'>

@@ -1,0 +1,13 @@
+'use client';
+import { use, useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
+import Link from 'next/link';
+import { Award } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Certificate, displayDate, Organization, organizationRequest } from '@/lib/organizations';
+export default function CertificatePage({ params }: { params: Promise<{ id: string; certificateId: string }> }) {
+  const { id, certificateId } = use(params); const { data: session, status } = useSession(); const [data, setData] = useState<{ certificate: Certificate; org: Organization } | null>(null); const [error, setError] = useState('');
+  useEffect(() => { if (!session?.accessToken) return; void Promise.all([organizationRequest<Certificate[]>(session.accessToken, `/${id}/certificates`), organizationRequest<Organization>(session.accessToken, `/${id}`)]).then(([certificates, org]) => { const certificate = certificates.find(c => c.id === certificateId); if (!certificate) throw new Error('Certificate not found'); setData({ certificate, org }); }).catch(e => setError(e.message)); }, [session?.accessToken, id, certificateId]);
+  if (status === 'unauthenticated') return <main className="container-page py-12"><Link href={`/auth/signin?callbackUrl=/organizations/${id}/certificates/${certificateId}`}>Sign in to view this certificate</Link></main>;
+  return <main className="max-w-4xl mx-auto p-8 space-y-8"><div className="flex justify-between print:hidden"><Link href={`/organizations/${id}`} className="text-primary underline">Back to workspace</Link><Button disabled={!data} onClick={() => window.print()}>Print / Save PDF</Button></div>{error ? <p role="alert">{error}</p> : !data ? <p role="status">Loading certificate…</p> : <article className="border-4 border-primary/30 p-10 text-center space-y-8 rounded-xl print:rounded-none"><Award className="size-16 mx-auto text-primary" /><p className="uppercase tracking-widest text-sm">{data.org.name}</p><h1 className="text-4xl font-semibold">Certificate of Completion</h1><p>This certifies that</p><p className="text-3xl font-medium">{data.certificate.user?.username}</p><p>has completed</p><h2 className="text-2xl font-semibold">{data.certificate.courseTitle}</h2><div className="space-y-2 text-sm"><p>{data.certificate.legacy ? 'Legacy completion — historical issue date unavailable' : `Issued ${displayDate(data.certificate.issuedAt, data.org.timezone)}`}</p>{data.certificate.expiresAt && <p>Expires {displayDate(data.certificate.expiresAt, data.org.timezone)}</p>}<p className="break-all">Credential ID: {data.certificate.id}</p></div><p className="text-sm text-muted-foreground">Platform-issued training record · Let’s Learn</p></article>}</main>;
+}

@@ -14,23 +14,23 @@ export class LessonsController {
 
   @Get()
   findAll(@Query('courseId') courseId: string) {
-    return this.lessonsService.findAll(+courseId);
+    return this.lessonsService.findAll(courseId);
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.lessonsService.findOne(+id);
+    return this.lessonsService.findOne(id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateLessonDto: any) {
-    return this.lessonsService.update(+id, updateLessonDto);
+    return this.lessonsService.update(id, updateLessonDto);
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.lessonsService.remove(+id);
+    return this.lessonsService.remove(id);
   }
 }

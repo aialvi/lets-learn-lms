@@ -24,6 +24,7 @@ import {
   PlayCircle,
 } from 'lucide-react';
 import { enrollInCourse, checkEnrollmentStatus } from '@/lib/api';
+import { CourseCover } from '@/components/courses/course-cover';
 
 interface Lesson {
   id: string;
@@ -34,6 +35,7 @@ interface Lesson {
 }
 
 interface Course {
+  imageUrl?: string | null;
   id: string;
   title: string;
   description: string;
@@ -123,6 +125,7 @@ export default function CourseDetailContent({ course }: { course: Course }) {
 
       <div className='grid gap-8 md:grid-cols-[2fr_1fr]'>
         <div>
+          <CourseCover src={course.imageUrl} title={course.title} className="mb-6 aspect-[16/7] rounded-xl" />
           <h1 className='mb-3 text-4xl font-semibold tracking-tight text-foreground'>
             {course.title}
           </h1>

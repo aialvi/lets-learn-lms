@@ -16,6 +16,7 @@ export interface Instructor {
 }
 
 export interface Course {
+  imageUrl?: string | null;
   id: string;
   title: string;
   description: string;
@@ -55,6 +56,7 @@ export interface CreateCourseData {
 }
 
 export interface UpdateCourseData {
+  imageUrl?: string;
   title?: string;
   description?: string;
   price?: number;

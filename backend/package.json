@@ -9,16 +9,24 @@
     "prebuild": "rimraf dist",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "db:migrate": "prisma migrate deploy",
+    "prestart": "npm run db:migrate",
     "start": "nest start",
+    "prestart:dev": "npm run db:migrate",
     "start:dev": "nest start --watch",
+    "prestart:debug": "npm run db:migrate",
     "start:debug": "nest start --debug --watch",
+    "prestart:prod": "npm run db:migrate",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "admin:create": "node scripts/create-admin.cjs",
+    "seed:sample": "npm run db:migrate && npm run build && node scripts/seed-sample-data.cjs",
+    "preview:organizations": "npm run build && node scripts/preview-organizations.cjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.12",
@@ -33,6 +41,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "cookie-parser": "^1.4.7",
+    "nodemailer": "^10.0.16",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
@@ -50,6 +59,7 @@
     "@types/express": "^5.0.1",
     "@types/jest": "29.5.14",
     "@types/node": "^22.13.13",
+    "@types/nodemailer": "^8.0.2",
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
     "@types/supertest": "^6.0.3",
@@ -84,6 +94,10 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "watchman": false
+  },
+  "engines": {
+    "node": ">=22 <23"
   }
 }
