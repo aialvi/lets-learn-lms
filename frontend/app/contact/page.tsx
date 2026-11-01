@@ -1,10 +1,9 @@
 import { MainNav } from '@/components/layout/main-nav';
 import { Footer } from '@/components/layout/footer';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import Link from 'next/link';
+import { ContactForm } from './contact-form';
 import { 
   Mail, 
   MapPin, 
@@ -16,6 +15,11 @@ import {
   Users
 } from 'lucide-react';
 
+export const metadata = {
+  title: "Contact us",
+  description: "Get in touch with the Let's Learn team.",
+};
+
 export default function ContactPage() {
   const contactMethods = [
     {
@@ -23,6 +27,7 @@ export default function ContactPage() {
       title: "Email Support",
       description: "Get help via email within 24 hours",
       contact: "support@letslearn.com",
+      href: "mailto:support@letslearn.com",
       availability: "24/7"
     },
     {
@@ -30,6 +35,7 @@ export default function ContactPage() {
       title: "Phone Support",
       description: "Speak directly with our support team",
       contact: "+1 (555) 123-4567",
+      href: "tel:+15551234567",
       availability: "Mon-Fri, 9AM-6PM EST"
     },
     {
@@ -37,6 +43,7 @@ export default function ContactPage() {
       title: "Live Chat",
       description: "Chat with our support team in real-time",
       contact: "Available on website",
+      href: undefined as string | undefined,
       availability: "Mon-Fri, 9AM-6PM EST"
     },
     {
@@ -72,15 +79,15 @@ export default function ContactPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       <MainNav />
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <main id="main-content" className="container-page w-full flex-1 max-w-6xl py-12 md:py-16">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-foreground mb-4">
+          <h1 className="mb-4 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
             Contact Us
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="mx-auto max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">
             We&apos;re here to help! Reach out to us with any questions, concerns, or feedback.
           </p>
         </div>
@@ -89,56 +96,13 @@ export default function ContactPage() {
           {/* Contact Form */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Send className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold leading-tight tracking-tight flex items-center gap-2">
+                <Send aria-hidden="true" className="h-5 w-5 text-primary" />
                 Send us a Message
-              </CardTitle>
+              </h2>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input id="firstName" placeholder="John" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input id="lastName" placeholder="Doe" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input id="email" type="email" placeholder="john@example.com" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                <select 
-                  id="department"
-                  className="w-full p-2 border border-input rounded-md bg-background"
-                >
-                  <option value="">Select a department</option>
-                  {departments.map((dept, index) => (
-                    <option key={index} value={dept.name.toLowerCase()}>
-                      {dept.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="subject">Subject</Label>
-                <Input id="subject" placeholder="How can we help you?" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="message">Message</Label>
-                <Textarea 
-                  id="message" 
-                  placeholder="Please describe your question or issue in detail..."
-                  rows={6}
-                />
-              </div>
-              <Button className="w-full">
-                <Send className="h-4 w-4 mr-2" />
-                Send Message
-              </Button>
+            <CardContent>
+              <ContactForm departments={departments} />
             </CardContent>
           </Card>
 
@@ -146,24 +110,32 @@ export default function ContactPage() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <HelpCircle className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold leading-tight tracking-tight flex items-center gap-2">
+                  <HelpCircle aria-hidden="true" className="h-5 w-5 text-primary" />
                   Get in Touch
-                </CardTitle>
+                </h2>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {contactMethods.map((method, index) => (
-                    <div key={index} className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted">
-                      <method.icon className="h-5 w-5 text-primary mt-0.5" />
+                    <div key={index} className="flex items-start gap-3 rounded-lg p-3">
+                      <method.icon aria-hidden="true" className="h-5 w-5 text-primary mt-0.5" />
                       <div>
-                        <h4 className="font-semibold">{method.title}</h4>
+                        <h3 className="font-semibold">{method.title}</h3>
                         <p className="text-sm text-muted-foreground mb-1">
                           {method.description}
                         </p>
-                        <p className="text-sm font-medium">{method.contact}</p>
+                        <p className="text-sm font-medium">
+                          {method.href ? (
+                            <a className="link" href={method.href}>
+                              {method.contact}
+                            </a>
+                          ) : (
+                            method.contact
+                          )}
+                        </p>
                         <p className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
+                          <Clock aria-hidden="true" className="h-3 w-3" />
                           {method.availability}
                         </p>
                       </div>
@@ -175,16 +147,16 @@ export default function ContactPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold leading-tight tracking-tight flex items-center gap-2">
+                  <Users aria-hidden="true" className="h-5 w-5 text-primary" />
                   Departments
-                </CardTitle>
+                </h2>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   {departments.map((dept, index) => (
                     <div key={index} className="border-b pb-3 last:border-b-0">
-                      <h4 className="font-semibold text-sm">{dept.name}</h4>
+                      <h3 className="font-semibold text-sm">{dept.name}</h3>
                       <p className="text-xs text-muted-foreground">
                         {dept.description}
                       </p>
@@ -199,38 +171,38 @@ export default function ContactPage() {
         {/* Quick Help */}
         <Card className="mt-8">
           <CardHeader>
-            <CardTitle>Need Quick Help?</CardTitle>
+            <h2 className="text-lg font-semibold leading-tight tracking-tight">Need Quick Help?</h2>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center p-4 rounded-lg bg-muted">
-                <HelpCircle className="h-8 w-8 text-primary mx-auto mb-2" />
-                <h4 className="font-semibold mb-1">Check our FAQ</h4>
+                <HelpCircle aria-hidden="true" className="h-8 w-8 text-primary mx-auto mb-2" />
+                <h3 className="font-semibold mb-1">Check our FAQ</h3>
                 <p className="text-sm text-muted-foreground mb-3">
                   Find answers to common questions
                 </p>
-                <Button size="sm" variant="outline">
-                  View FAQ
+                <Button size="sm" variant="outline" asChild>
+                  <Link href="/help#faq">View FAQ</Link>
                 </Button>
               </div>
               <div className="text-center p-4 rounded-lg bg-muted">
-                <MessageSquare className="h-8 w-8 text-primary mx-auto mb-2" />
-                <h4 className="font-semibold mb-1">Start Live Chat</h4>
+                <MessageSquare aria-hidden="true" className="h-8 w-8 text-primary mx-auto mb-2" />
+                <h3 className="font-semibold mb-1">Browse guides</h3>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Chat with our support team now
+                  Step-by-step help for accounts, courses, and billing
                 </p>
-                <Button size="sm" variant="outline">
-                  Start Chat
+                <Button size="sm" variant="outline" asChild>
+                  <Link href="/help">Visit help center</Link>
                 </Button>
               </div>
               <div className="text-center p-4 rounded-lg bg-muted">
-                <Mail className="h-8 w-8 text-primary mx-auto mb-2" />
-                <h4 className="font-semibold mb-1">Email Us</h4>
+                <Mail aria-hidden="true" className="h-8 w-8 text-primary mx-auto mb-2" />
+                <h3 className="font-semibold mb-1">Email Us</h3>
                 <p className="text-sm text-muted-foreground mb-3">
                   Send us an email for detailed help
                 </p>
-                <Button size="sm" variant="outline">
-                  Send Email
+                <Button size="sm" variant="outline" asChild>
+                  <a href="mailto:support@letslearn.com">Send email</a>
                 </Button>
               </div>
             </div>
@@ -238,8 +210,8 @@ export default function ContactPage() {
         </Card>
 
         {/* Response Time */}
-        <div className="text-center mt-8 p-6 bg-muted rounded-lg">
-          <h3 className="font-semibold mb-2">Response Times</h3>
+        <section className="mt-8 rounded-xl bg-muted p-6 text-center">
+          <h2 className="mb-3 font-semibold">Response times</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div>
               <strong>Email:</strong> Within 24 hours
@@ -251,8 +223,8 @@ export default function ContactPage() {
               <strong>Phone:</strong> Immediate during business hours
             </div>
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
       <Footer />
     </div>
   );

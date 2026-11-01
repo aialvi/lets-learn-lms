@@ -13,6 +13,8 @@ import {
   type FieldValues,
 } from "react-hook-form"
 
+import { AlertCircle } from "lucide-react"
+
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
 
@@ -147,9 +149,10 @@ function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
     <p
       data-slot="form-message"
       id={formMessageId}
-      className={cn("text-destructive text-sm", className)}
+      className={cn("flex items-center gap-1.5 text-destructive text-sm", className)}
       {...props}
     >
+      {error ? <AlertCircle aria-hidden="true" className="size-3.5 shrink-0" /> : null}
       {body}
     </p>
   )

@@ -8,16 +8,16 @@ interface DashboardCardProps {
 
 export function DashboardCard({ title, value, icon: Icon }: DashboardCardProps) {
   return (
-    <div className="rounded-lg border bg-card p-5">
-      <div className="flex items-center gap-4">
-        <div className="flex size-11 items-center justify-center rounded-md border bg-background text-primary">
-          <Icon className="size-5" />
-        </div>
-        <div>
-          <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
-          <p className="text-3xl font-semibold tracking-tight text-foreground">{value}</p>
-        </div>
+    <div className='surface p-5'>
+      <div className='flex items-start justify-between gap-4'>
+        <p className='text-sm font-medium text-muted-foreground'>{title}</p>
+        <span className='flex size-9 items-center justify-center rounded-lg bg-accent text-accent-foreground'>
+          <Icon aria-hidden='true' className='size-4' />
+        </span>
       </div>
+      <p className='mt-3 text-3xl font-semibold tabular-nums tracking-tight text-foreground'>
+        {value.toLocaleString()}
+      </p>
     </div>
   );
 }

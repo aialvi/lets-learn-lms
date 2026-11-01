@@ -1,6 +1,6 @@
 import { MainNav } from '@/components/layout/main-nav';
 import { Footer } from '@/components/layout/footer';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, } from '@/components/ui/card';
 import { 
   Shield, 
   Eye, 
@@ -12,14 +12,19 @@ import {
   Lock
 } from 'lucide-react';
 
+export const metadata = {
+  title: "Privacy policy",
+  description: "How Let's Learn collects and uses your data.",
+};
+
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       <MainNav />
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <main id="main-content" className="container-page w-full flex-1 max-w-4xl py-12 md:py-16">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-4">
+          <h1 className="mb-4 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
             Privacy Policy
           </h1>
           <p className="text-muted-foreground">
@@ -30,10 +35,10 @@ export default function PrivacyPage() {
         {/* Introduction */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold leading-tight tracking-tight flex items-center gap-2">
+              <Shield aria-hidden="true" className="h-5 w-5 text-primary" />
               Introduction
-            </CardTitle>
+            </h2>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground leading-relaxed">
@@ -47,14 +52,14 @@ export default function PrivacyPage() {
         {/* Information We Collect */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold leading-tight tracking-tight flex items-center gap-2">
+              <Database aria-hidden="true" className="h-5 w-5 text-primary" />
               Information We Collect
-            </CardTitle>
+            </h2>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <h4 className="font-semibold mb-2">Personal Information</h4>
+              <h3 className="font-semibold mb-2">Personal Information</h3>
               <p className="text-muted-foreground text-sm leading-relaxed mb-2">
                 We collect personal information that you voluntarily provide to us, including:
               </p>
@@ -67,7 +72,7 @@ export default function PrivacyPage() {
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">Usage Information</h4>
+              <h3 className="font-semibold mb-2">Usage Information</h3>
               <p className="text-muted-foreground text-sm leading-relaxed mb-2">
                 We automatically collect information about how you use our Service:
               </p>
@@ -80,7 +85,7 @@ export default function PrivacyPage() {
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">Cookies and Tracking</h4>
+              <h3 className="font-semibold mb-2">Cookies and Tracking</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 We use cookies and similar tracking technologies to enhance your experience, 
                 analyze usage patterns, and provide personalized content. You can control 
@@ -93,14 +98,14 @@ export default function PrivacyPage() {
         {/* How We Use Information */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold leading-tight tracking-tight flex items-center gap-2">
+              <Eye aria-hidden="true" className="h-5 w-5 text-primary" />
               How We Use Your Information
-            </CardTitle>
+            </h2>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <h4 className="font-semibold mb-2">Service Provision</h4>
+              <h3 className="font-semibold mb-2">Service Provision</h3>
               <ul className="text-muted-foreground text-sm space-y-1 ml-4">
                 <li>• Create and manage your account</li>
                 <li>• Provide access to courses and learning materials</li>
@@ -110,7 +115,7 @@ export default function PrivacyPage() {
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">Communication</h4>
+              <h3 className="font-semibold mb-2">Communication</h3>
               <ul className="text-muted-foreground text-sm space-y-1 ml-4">
                 <li>• Send important service updates and notifications</li>
                 <li>• Respond to your inquiries and support requests</li>
@@ -119,7 +124,7 @@ export default function PrivacyPage() {
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">Improvement and Analytics</h4>
+              <h3 className="font-semibold mb-2">Improvement and Analytics</h3>
               <ul className="text-muted-foreground text-sm space-y-1 ml-4">
                 <li>• Analyze usage patterns to improve our Service</li>
                 <li>• Personalize your learning experience</li>
@@ -133,21 +138,21 @@ export default function PrivacyPage() {
         {/* Information Sharing */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold leading-tight tracking-tight flex items-center gap-2">
               <Share2 className="h-5 w-5 text-primary" />
               Information Sharing and Disclosure
-            </CardTitle>
+            </h2>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <h4 className="font-semibold mb-2">We Do Not Sell Your Data</h4>
+              <h3 className="font-semibold mb-2">We Do Not Sell Your Data</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 We do not sell, trade, or otherwise transfer your personal information to third 
                 parties for their marketing purposes.
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">Limited Sharing</h4>
+              <h3 className="font-semibold mb-2">Limited Sharing</h3>
               <p className="text-muted-foreground text-sm leading-relaxed mb-2">
                 We may share your information in the following circumstances:
               </p>
@@ -159,7 +164,7 @@ export default function PrivacyPage() {
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">Course Instructors</h4>
+              <h3 className="font-semibold mb-2">Course Instructors</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 Course instructors may see aggregate data about student progress and engagement 
                 but do not have access to your personal information unless you choose to share it.
@@ -171,14 +176,14 @@ export default function PrivacyPage() {
         {/* Data Security */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lock className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold leading-tight tracking-tight flex items-center gap-2">
+              <Lock aria-hidden="true" className="h-5 w-5 text-primary" />
               Data Security
-            </CardTitle>
+            </h2>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <h4 className="font-semibold mb-2">Security Measures</h4>
+              <h3 className="font-semibold mb-2">Security Measures</h3>
               <p className="text-muted-foreground text-sm leading-relaxed mb-2">
                 We implement appropriate technical and organizational measures to protect your data:
               </p>
@@ -191,7 +196,7 @@ export default function PrivacyPage() {
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">Data Retention</h4>
+              <h3 className="font-semibold mb-2">Data Retention</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 We retain your personal information only as long as necessary to provide our 
                 services and fulfill the purposes outlined in this policy, or as required by law.
@@ -203,14 +208,14 @@ export default function PrivacyPage() {
         {/* Your Rights */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold leading-tight tracking-tight flex items-center gap-2">
+              <Settings aria-hidden="true" className="h-5 w-5 text-primary" />
               Your Rights and Choices
-            </CardTitle>
+            </h2>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <h4 className="font-semibold mb-2">Access and Control</h4>
+              <h3 className="font-semibold mb-2">Access and Control</h3>
               <p className="text-muted-foreground text-sm leading-relaxed mb-2">
                 You have the right to:
               </p>
@@ -223,14 +228,14 @@ export default function PrivacyPage() {
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">Cookie Controls</h4>
+              <h3 className="font-semibold mb-2">Cookie Controls</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 You can control cookies through your browser settings. Note that disabling certain 
                 cookies may affect the functionality of our Service.
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">Data Portability</h4>
+              <h3 className="font-semibold mb-2">Data Portability</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 You can request a copy of your data in a structured, commonly used format. 
                 Contact us to exercise this right.
@@ -242,28 +247,28 @@ export default function PrivacyPage() {
         {/* Cookies */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Cookie className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold leading-tight tracking-tight flex items-center gap-2">
+              <Cookie aria-hidden="true" className="h-5 w-5 text-primary" />
               Cookies and Tracking Technologies
-            </CardTitle>
+            </h2>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <h4 className="font-semibold mb-2">Essential Cookies</h4>
+              <h3 className="font-semibold mb-2">Essential Cookies</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 These cookies are necessary for the Service to function and cannot be switched off. 
                 They are usually set in response to actions you take, such as logging in or filling forms.
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">Performance Cookies</h4>
+              <h3 className="font-semibold mb-2">Performance Cookies</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 These cookies help us understand how you interact with our Service by collecting 
                 anonymous information about page visits and user behavior.
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">Functionality Cookies</h4>
+              <h3 className="font-semibold mb-2">Functionality Cookies</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 These cookies enable enhanced functionality and personalization, such as remembering 
                 your preferences and providing customized content.
@@ -275,7 +280,7 @@ export default function PrivacyPage() {
         {/* International Users */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>International Users</CardTitle>
+            <h2 className="text-lg font-semibold leading-tight tracking-tight">International Users</h2>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground text-sm leading-relaxed mb-4">
@@ -293,7 +298,7 @@ export default function PrivacyPage() {
         {/* Children's Privacy */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Children&apos;s Privacy</CardTitle>
+            <h2 className="text-lg font-semibold leading-tight tracking-tight">Children&apos;s Privacy</h2>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground text-sm leading-relaxed">
@@ -307,7 +312,7 @@ export default function PrivacyPage() {
         {/* Changes to Privacy Policy */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Changes to This Privacy Policy</CardTitle>
+            <h2 className="text-lg font-semibold leading-tight tracking-tight">Changes to This Privacy Policy</h2>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground text-sm leading-relaxed">
@@ -321,10 +326,10 @@ export default function PrivacyPage() {
         {/* Contact Information */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Mail className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold leading-tight tracking-tight flex items-center gap-2">
+              <Mail aria-hidden="true" className="h-5 w-5 text-primary" />
               Contact Us
-            </CardTitle>
+            </h2>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground text-sm leading-relaxed mb-4">
@@ -337,7 +342,7 @@ export default function PrivacyPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </main>
       <Footer />
     </div>
   );

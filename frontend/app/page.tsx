@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { MainNav } from '@/components/layout/main-nav';
@@ -12,16 +10,16 @@ export default function Home() {
   return (
     <div className='flex min-h-screen flex-col bg-background'>
       <MainNav />
-      <main className='flex-1 w-full'>
+      <main id='main-content' className='flex-1 w-full'>
         <HeroSection />
         <FeaturedCourses />
         <GrowthFeatures />
 
-        <section className="bg-background py-20">
+        <section aria-labelledby="cta-heading" className="bg-background py-16 md:py-24">
           <div className="container-page">
-            <div className="grid gap-8 rounded-lg border bg-card p-6 md:grid-cols-[1fr_auto] md:items-center md:p-8">
+            <div className="surface grid gap-8 p-6 md:grid-cols-[1fr_auto] md:items-center md:p-10">
               <div className="space-y-2">
-                <h2 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+                <h2 id="cta-heading" className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
                   Ready to start learning?
                 </h2>
                 <p className="max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
@@ -29,10 +27,10 @@ export default function Home() {
                 </p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row">
-                <Button asChild size="lg" className="font-semibold">
+                <Button asChild size="lg">
                   <Link href="/auth/signup">Create account</Link>
                 </Button>
-                <Button asChild size="lg" variant="outline" className="font-semibold">
+                <Button asChild size="lg" variant="outline">
                   <Link href="/contact">Contact us</Link>
                 </Button>
               </div>

@@ -1,9 +1,16 @@
+'use client';
+
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
+import { Spinner } from '@/components/ui/spinner';
+import { FormAlert } from './admin-ui';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -36,7 +43,7 @@ interface Course {
 interface CreateLessonModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateLessonData) => void;
+  onSubmit: (data: CreateLessonData) => Promise<void>;
   courses: Course[];
 }
 
@@ -67,25 +74,35 @@ export default function CreateLessonModal({
     },
   });
 
-  const handleSubmit = (values: z.infer<typeof formSchema>) => {
-    onSubmit({
-      ...values,
-      courseId: parseInt(values.courseId),
-    });
-    form.reset();
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const isSubmitting = form.formState.isSubmitting;
+
+  const handleSubmit = async (values: z.infer<typeof formSchema>) => {
+    setSubmitError(null);
+    try {
+      await onSubmit({
+        ...values,
+        courseId: parseInt(values.courseId),
+      });
+      form.reset();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "We couldn't create this lesson.");
+    }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className='sm:max-w-[500px]'>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && !isSubmitting && onClose()}>
+      <DialogContent className='max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg'>
         <DialogHeader>
-          <DialogTitle>Create Lesson</DialogTitle>
+          <DialogTitle>Add lesson</DialogTitle>
+          <DialogDescription>Lessons appear in the order you set.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(handleSubmit)}
             className='space-y-4'
           >
+            <FormAlert message={submitError} />
             <FormField
               control={form.control}
               name='title'
@@ -129,7 +146,7 @@ export default function CreateLessonModal({
                     defaultValue={field.value}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className='w-full'>
                         <SelectValue placeholder='Select a course' />
                       </SelectTrigger>
                     </FormControl>
@@ -192,7 +209,7 @@ export default function CreateLessonModal({
               name='videoUrl'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Video URL (Optional)</FormLabel>
+                  <FormLabel>Video URL (optional)</FormLabel>
                   <FormControl>
                     <Input
                       type='url'
@@ -206,12 +223,15 @@ export default function CreateLessonModal({
               )}
             />
 
-            <div className='flex justify-end space-x-2'>
-              <Button variant='outline' onClick={onClose} type='button'>
+            <DialogFooter className='pt-2'>
+              <Button variant='outline' onClick={onClose} type='button' disabled={isSubmitting}>
                 Cancel
               </Button>
-              <Button type='submit'>Create</Button>
-            </div>
+              <Button type='submit' disabled={isSubmitting}>
+                {isSubmitting ? <Spinner /> : null}
+                {isSubmitting ? 'Adding…' : 'Add lesson'}
+              </Button>
+            </DialogFooter>
           </form>
         </Form>
       </DialogContent>

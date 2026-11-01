@@ -23,5 +23,10 @@ export async function organizationRequest<T>(token: string, path: string, method
   return response.json();
 }
 export function displayDate(value: string | null, timezone = 'UTC') { return value ? new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short', timeZone: timezone }).format(new Date(value)) : '—'; }
-export const control = 'w-full rounded-md border border-input bg-background px-3 py-2 text-sm';
-export const panel = 'rounded-xl border bg-card p-5 space-y-4';
+/** Native input/select/textarea styling that matches components/ui/input. */
+export const control = 'mt-1.5 block min-h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-base font-normal text-foreground shadow-xs transition-[color,box-shadow,border-color] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/25 aria-invalid:border-destructive disabled:cursor-not-allowed disabled:opacity-50 md:text-sm';
+/** Wrapping <label> for a text label + control. */
+export const fieldLabel = 'block text-sm font-medium text-foreground';
+/** Native checkbox/radio styling. */
+export const check = 'size-4 shrink-0 accent-primary';
+export const panel = 'surface space-y-4 p-5 sm:p-6';

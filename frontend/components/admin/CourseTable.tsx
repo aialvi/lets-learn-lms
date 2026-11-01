@@ -1,27 +1,20 @@
+'use client';
+
 import { useState } from 'react';
 import {
   Table,
   TableBody,
+  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { formatDate, truncateText } from '@/lib/utils';
 import { EditCourseModal } from './EditCourseModal';
+import { RowActions, TableSurface } from './admin-ui';
 import { UpdateCourseData } from '@/types';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 
 interface Instructor {
   id: number;
@@ -29,6 +22,7 @@ interface Instructor {
 }
 
 interface Course {
+  imageUrl?: string | null;
   id: number;
   title: string;
   description: string;
@@ -48,88 +42,61 @@ interface CourseTableProps {
   onDelete: (id: number) => Promise<void>;
 }
 
-export function CourseTable({
-  courses,
-  instructors,
-  onUpdate,
-  onDelete,
-}: CourseTableProps) {
+const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+
+export function CourseTable({ courses, instructors, onUpdate, onDelete }: CourseTableProps) {
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
 
   return (
     <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>ID</TableHead>
-            <TableHead>Title</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Price</TableHead>
-            <TableHead>Instructor</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Created At</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {courses.map((course) => (
-            <TableRow key={course.id}>
-              <TableCell>{course.id}</TableCell>
-              <TableCell>{course.title}</TableCell>
-              <TableCell>{truncateText(course.description, 50)}</TableCell>
-              <TableCell>${course.price.toFixed(2)}</TableCell>
-              <TableCell>{course.instructor?.username || 'Unknown'}</TableCell>
-              <TableCell>
-                <span
-                  className={`rounded-md border px-2 py-1 text-xs font-medium ${
-                    course.isPublished
-                      ? 'bg-accent text-accent-foreground'
-                      : 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  {course.isPublished ? 'Published' : 'Draft'}
-                </span>
-              </TableCell>
-              <TableCell>{formatDate(course.createdAt)}</TableCell>
-              <TableCell>
-                <div className='flex space-x-2'>
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    onClick={() => setEditingCourse(course)}
-                  >
-                    Edit
-                  </Button>
-
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant='destructive' size='sm'>
-                        Delete
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This action cannot be undone. This will permanently
-                          delete the course and all associated lessons and
-                          enrollments.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => onDelete(course.id)}>
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </TableCell>
+      <TableSurface>
+        <Table>
+          <TableCaption className='sr-only'>Courses ({courses.length})</TableCaption>
+          <TableHeader className='bg-muted/40'>
+            <TableRow>
+              <TableHead>Course</TableHead>
+              <TableHead>Instructor</TableHead>
+              <TableHead className='text-right'>Price</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead className='w-24 text-right'>
+                <span className='sr-only'>Actions</span>
+              </TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {courses.map((course) => (
+              <TableRow key={course.id}>
+                <TableCell className='min-w-64 max-w-md whitespace-normal'>
+                  <p className='font-medium text-foreground'>{course.title}</p>
+                  <p className='text-muted-foreground'>{truncateText(course.description, 80)}</p>
+                </TableCell>
+                <TableCell>{course.instructor?.username || 'Unassigned'}</TableCell>
+                <TableCell className='text-right tabular-nums'>
+                  {course.price ? currency.format(course.price) : 'Free'}
+                </TableCell>
+                <TableCell>
+                  <Badge variant={course.isPublished ? 'success' : 'secondary'}>
+                    {course.isPublished ? 'Published' : 'Draft'}
+                  </Badge>
+                </TableCell>
+                <TableCell className='whitespace-nowrap text-muted-foreground'>
+                  {formatDate(course.createdAt)}
+                </TableCell>
+                <TableCell>
+                  <RowActions
+                    itemType='course'
+                    itemLabel={course.title}
+                    onEdit={() => setEditingCourse(course)}
+                    onDelete={() => onDelete(course.id)}
+                    deleteDescription='This permanently deletes the course along with its lessons and enrollments.'
+                  />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableSurface>
 
       {editingCourse && (
         <EditCourseModal

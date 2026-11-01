@@ -1,10 +1,19 @@
+'use client';
+
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
+import { Field, FormAlert } from './admin-ui';
 import { CreateUserData } from '@/types';
 
 interface CreateUserModalProps {
@@ -13,149 +22,113 @@ interface CreateUserModalProps {
   onSubmit: (data: CreateUserData) => Promise<void>;
 }
 
+const emptyForm = { username: '', email: '', password: '', role: 'user' };
+
 export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalProps) {
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    role: 'user',
-  });
+  const [formData, setFormData] = useState(emptyForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user types
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
-    }
-  };
-
-  const handleRoleChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, role: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
-    if (!formData.username.trim()) {
-      newErrors.username = 'Username is required';
-    }
-    
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
-    }
-    
-    if (!formData.password.trim()) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-    
+    if (!formData.username.trim()) newErrors.username = 'Enter a username.';
+    if (!formData.email.trim()) newErrors.email = 'Enter an email address.';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Enter an email address like name@example.com.';
+    if (!formData.password.trim()) newErrors.password = 'Enter a password.';
+    else if (formData.password.length < 6) newErrors.password = 'Use at least 6 characters.';
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return newErrors;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
+    setSubmitError(null);
+    const newErrors = validateForm();
+    const firstInvalid = Object.keys(newErrors)[0];
+    if (firstInvalid) {
+      e.currentTarget.querySelector<HTMLElement>(`#create-user-${firstInvalid}`)?.focus();
       return;
     }
-    
     try {
       setIsSubmitting(true);
       await onSubmit(formData);
-      setFormData({
-        username: '',
-        email: '',
-        password: '',
-        role: 'user',
-      });
+      setFormData(emptyForm);
     } catch (error) {
-      console.error('Error creating user:', error);
+      setSubmitError(error instanceof Error ? error.message : "We couldn't create this user.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const close = () => {
+    setErrors({});
+    setSubmitError(null);
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && !isSubmitting && close()}>
+      <DialogContent className='sm:max-w-md'>
         <DialogHeader>
-          <DialogTitle>Create New User</DialogTitle>
+          <DialogTitle>Add user</DialogTitle>
+          <DialogDescription>They can sign in right away with this email and password.</DialogDescription>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
-            <Input
-              id="username"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-            />
-            {errors.username && (
-              <p className="text-red-500 text-sm">{errors.username}</p>
+
+        <form onSubmit={handleSubmit} noValidate className='space-y-4'>
+          <FormAlert message={submitError} />
+          <Field id='create-user-username' label='Username' error={errors.username}>
+            {(props) => (
+              <Input {...props} name='username' autoComplete='off' value={formData.username} onChange={handleChange} />
             )}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-            />
-            {errors.email && (
-              <p className="text-red-500 text-sm">{errors.email}</p>
+          </Field>
+          <Field id='create-user-email' label='Email' error={errors.email}>
+            {(props) => (
+              <Input {...props} name='email' type='email' autoComplete='off' value={formData.email} onChange={handleChange} />
             )}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-            />
-            {errors.password && (
-              <p className="text-red-500 text-sm">{errors.password}</p>
+          </Field>
+          <Field id='create-user-password' label='Password' hint='At least 6 characters.' error={errors.password}>
+            {(props) => (
+              <Input
+                {...props}
+                name='password'
+                type='password'
+                autoComplete='new-password'
+                value={formData.password}
+                onChange={handleChange}
+              />
             )}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="role">Role</Label>
-            <Select
-              value={formData.role}
-              onValueChange={handleRoleChange}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="user">User</SelectItem>
-                <SelectItem value="instructor">Instructor</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+          </Field>
+          <Field id='create-user-role' label='Role'>
+            {(props) => (
+              <Select value={formData.role} onValueChange={(role) => setFormData((prev) => ({ ...prev, role }))}>
+                <SelectTrigger {...props} className='w-full'>
+                  <SelectValue placeholder='Select role' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='user'>User</SelectItem>
+                  <SelectItem value='instructor'>Instructor</SelectItem>
+                  <SelectItem value='admin'>Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          </Field>
+
+          <DialogFooter className='pt-2'>
+            <Button type='button' variant='outline' onClick={close} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating...' : 'Create User'}
+            <Button type='submit' disabled={isSubmitting}>
+              {isSubmitting ? <Spinner /> : null}
+              {isSubmitting ? 'Adding…' : 'Add user'}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

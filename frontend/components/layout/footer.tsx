@@ -3,17 +3,18 @@ import Link from "next/link";
 export function Footer() {
   return (
     <footer className="w-full border-t bg-card py-12">
+      <h2 className="sr-only">Footer</h2>
       <div className="container-page grid grid-cols-1 gap-8 md:grid-cols-4">
         <div className="space-y-3">
-          <span className="text-base font-semibold tracking-tight text-foreground">
+          <p className="text-base font-semibold tracking-tight text-foreground">
             Let&apos;s Learn
-          </span>
+          </p>
           <p className="max-w-xs text-sm leading-6 text-muted-foreground">
             Focused online courses for practical skills, guided lessons, and steady progress.
           </p>
         </div>
-        <div className="space-y-4">
-          <h5 className="text-sm font-semibold text-foreground">Platform</h5>
+        <nav aria-label="Platform" className="space-y-4">
+          <h3 className="text-sm font-semibold text-foreground">Platform</h3>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li>
               <Link className="transition-colors hover:text-foreground" href="/courses">
@@ -26,9 +27,9 @@ export function Footer() {
               </Link>
             </li>
           </ul>
-        </div>
-        <div className="space-y-4">
-          <h5 className="text-sm font-semibold text-foreground">Resources</h5>
+        </nav>
+        <nav aria-label="Resources" className="space-y-4">
+          <h3 className="text-sm font-semibold text-foreground">Resources</h3>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li>
               <Link className="transition-colors hover:text-foreground" href="/help">
@@ -41,9 +42,9 @@ export function Footer() {
               </Link>
             </li>
           </ul>
-        </div>
-        <div className="space-y-4">
-          <h5 className="text-sm font-semibold text-foreground">Legal</h5>
+        </nav>
+        <nav aria-label="Legal" className="space-y-4">
+          <h3 className="text-sm font-semibold text-foreground">Legal</h3>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li>
               <Link className="transition-colors hover:text-foreground" href="/terms">
@@ -56,10 +57,10 @@ export function Footer() {
               </Link>
             </li>
           </ul>
-        </div>
+        </nav>
       </div>
       <div className="container-page mt-10 border-t pt-6 text-xs text-muted-foreground">
-        © 2026 Let&apos;s Learn. All rights reserved.
+        © {new Date().getFullYear()} Let&apos;s Learn. All rights reserved.
       </div>
     </footer>
   );

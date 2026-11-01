@@ -4,6 +4,11 @@ import { useSession } from 'next-auth/react';
 import { useEffect, useState, useCallback } from 'react';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
+import { ErrorState } from '@/components/ui/error-state';
+import { LoadingRegion, Skeleton } from '@/components/ui/skeleton';
+import { Spinner } from '@/components/ui/spinner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -21,6 +26,9 @@ import {
   TrendingUp,
   Play,
   CheckCircle,
+  AlertCircle,
+  RotateCcw,
+  type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import { MainNav } from '@/components/layout/main-nav';
@@ -77,6 +85,7 @@ export default function DashboardPage() {
   const [coachLoadingPrompt, setCoachLoadingPrompt] = useState<string | null>(null);
   const [coachResponse, setCoachResponse] = useState<string | null>(null);
   const [coachError, setCoachError] = useState<string | null>(null);
+  const [lastCoachPrompt, setLastCoachPrompt] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -93,7 +102,6 @@ export default function DashboardPage() {
 
       // Fetch enrollments
       const enrollmentsData = await fetchEnrollments(session.accessToken);
-      console.log('Enrollments data:', enrollmentsData);
       setEnrollments(enrollmentsData);
 
       // Fetch video progress for each enrolled course
@@ -104,7 +112,6 @@ export default function DashboardPage() {
             enrollment.course.id,
             session.accessToken
           );
-          console.log(`Progress for course ${enrollment.course.id}:`, progress);
 
           // Handle different response formats
           if (Array.isArray(progress)) {
@@ -127,7 +134,7 @@ export default function DashboardPage() {
       setVideoProgress(progressData);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      setError('Failed to load dashboard data. Please try again.');
+      setError('We couldn’t load your courses and progress. Check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -238,6 +245,7 @@ export default function DashboardPage() {
 
     try {
       setCoachLoadingPrompt(prompt);
+      setLastCoachPrompt(prompt);
       setCoachError(null);
       const response = await requestStudyCoach(
         {
@@ -251,7 +259,7 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('AI coach request failed:', error);
       setCoachError(
-        'AI coach is unavailable. Check OPENROUTER_API_KEY on the backend and try again.'
+        'The AI coach didn’t respond. It may be temporarily unavailable — try again in a moment.'
       );
     } finally {
       setCoachLoadingPrompt(null);
@@ -260,19 +268,38 @@ export default function DashboardPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className='flex flex-col min-h-screen bg-background'>
+      <div className='flex min-h-screen flex-col bg-background'>
         <MainNav />
-        <main className='flex-1 flex items-center justify-center py-12'>
-          <div className='container mx-auto px-4 py-8'>
-            <div className='animate-pulse'>
-              <div className='h-8 bg-muted rounded w-1/4 mb-6'></div>
-              <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-8'>
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className='h-32 bg-muted rounded-lg'></div>
-                ))}
+        <main id='main-content' className='flex-1'>
+          <LoadingRegion label='Loading your dashboard' className='container-page space-y-8 py-10 sm:py-12'>
+            <div className='grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end'>
+              <div className='space-y-3'>
+                <Skeleton className='h-3 w-28' />
+                <Skeleton className='h-9 w-80 max-w-full' />
+                <Skeleton className='h-4 w-[30rem] max-w-full' />
               </div>
+              <Skeleton className='h-28 w-full lg:w-80' />
             </div>
-          </div>
+            <div className='grid grid-cols-2 gap-4 xl:grid-cols-4'>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className='h-28' />
+              ))}
+            </div>
+            <Skeleton className='h-10 w-full' />
+            <div className='grid gap-6 md:grid-cols-2'>
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className='surface overflow-hidden'>
+                  <Skeleton className='aspect-[16/6] w-full rounded-none' />
+                  <div className='space-y-3 p-6'>
+                    <Skeleton className='h-5 w-2/3' />
+                    <Skeleton className='h-4 w-1/3' />
+                    <Skeleton className='h-2 w-full' />
+                    <Skeleton className='h-9 w-full' />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </LoadingRegion>
         </main>
         <Footer />
       </div>
@@ -281,21 +308,20 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <div className='flex flex-col min-h-screen bg-background'>
+      <div className='flex min-h-screen flex-col bg-background'>
         <MainNav />
-        <main className='flex-1 flex items-center justify-center py-12'>
-          <div className='container mx-auto px-4 py-8'>
-            <Card>
-              <CardContent className='pt-6'>
-                <div className='text-center py-8'>
-                  <p className='mb-4 text-destructive'>{error}</p>
-                  <Button onClick={() => window.location.reload()}>
-                    Try Again
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        <main id='main-content' className='container-page flex-1 py-10 sm:py-12'>
+          <h1 className='page-title mb-6'>Dashboard</h1>
+          <ErrorState
+            title='Your dashboard didn’t load'
+            message={error}
+            onRetry={fetchDashboardData}
+            action={
+              <Button asChild variant='ghost'>
+                <Link href='/courses'>Browse courses</Link>
+              </Button>
+            }
+          />
         </main>
         <Footer />
       </div>
@@ -305,22 +331,20 @@ export default function DashboardPage() {
   return (
     <div className='flex flex-col min-h-screen bg-background'>
       <MainNav />
-      <main className='flex-1 w-full'>
-        <div className='container-page py-12'>
+      <main id='main-content' className='flex-1 w-full'>
+        <div className='container-page py-10 sm:py-12'>
           <div className='mb-8 grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end'>
             <div>
               <p className="eyebrow">Learner cockpit</p>
-              <h1 className='mt-2 mb-2 text-3xl font-semibold tracking-tight text-foreground'>
+              <h1 className='page-title mt-2 mb-2'>
                 Welcome back, {session?.user?.name || 'Student'}.
               </h1>
-              <p className='text-muted-foreground'>
+              <p className='page-description'>
                 Your AI-ready dashboard for skills, momentum, and measurable learning outcomes.
               </p>
             </div>
-            <div className="rounded-lg border bg-card p-4">
-              <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                Learner health
-              </p>
+            <div className="surface p-5 lg:max-w-sm">
+              <p className="eyebrow">Learner health</p>
               <p className="mt-2 text-xl font-semibold text-foreground">{learnerHealth.label}</p>
               <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
                 {learnerHealth.detail}
@@ -328,89 +352,38 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className='mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4'>
-            <Card>
-              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                <CardTitle className='text-sm font-medium'>
-                  Enrolled Courses
-                </CardTitle>
-                <BookOpen className='h-4 w-4 text-primary' />
-              </CardHeader>
-              <CardContent>
-                <div className='text-2xl font-bold'>{enrollments.length}</div>
-                <p className='text-xs text-muted-foreground'>Active learning paths</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                <CardTitle className='text-sm font-medium'>
-                  Watch Time
-                </CardTitle>
-                <Clock className='h-4 w-4 text-primary' />
-              </CardHeader>
-              <CardContent>
-                <div className='text-2xl font-bold'>{getTotalWatchTime()}</div>
-                <p className='text-xs text-muted-foreground'>Minutes watched</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                <CardTitle className='text-sm font-medium'>
-                  Completed Lessons
-                </CardTitle>
-                <Trophy className='h-4 w-4 text-primary' />
-              </CardHeader>
-              <CardContent>
-                <div className='text-2xl font-bold'>
-                  {getCompletedLessons()}
-                </div>
-                <p className='text-xs text-muted-foreground'>Lessons finished</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                <CardTitle className='text-sm font-medium'>
-                  Skill Readiness
-                </CardTitle>
-                <Target className='h-4 w-4 text-primary' />
-              </CardHeader>
-              <CardContent>
-                <div className='text-2xl font-bold'>{getAverageProgress()}%</div>
-                <p className='text-xs text-muted-foreground'>Average path progress</p>
-              </CardContent>
-            </Card>
-          </div>
+          <section aria-labelledby='stats-heading' className='mb-8'>
+            <h2 id='stats-heading' className='sr-only'>Learning summary</h2>
+            <dl className='grid grid-cols-2 gap-4 xl:grid-cols-4'>
+              <StatCard icon={BookOpen} label='Enrolled courses' value={enrollments.length} hint='Active learning paths' />
+              <StatCard icon={Clock} label='Watch time' value={`${getTotalWatchTime()} min`} hint='Total minutes watched' />
+              <StatCard icon={Trophy} label='Completed lessons' value={getCompletedLessons()} hint='Lessons finished' />
+              <StatCard icon={Target} label='Skill readiness' value={`${getAverageProgress()}%`} hint='Average path progress' />
+            </dl>
+          </section>
 
           <Tabs defaultValue='courses' className='space-y-6'>
-            <TabsList className='grid h-auto w-full grid-cols-2 md:grid-cols-5'>
-              <TabsTrigger value='courses'>My Courses</TabsTrigger>
-              <TabsTrigger value='skills'>Skill Plan</TabsTrigger>
+            <TabsList className='flex h-auto w-full justify-start overflow-x-auto md:grid md:grid-cols-5'>
+              <TabsTrigger value='courses'>My courses</TabsTrigger>
+              <TabsTrigger value='skills'>Skill plan</TabsTrigger>
               <TabsTrigger value='coach'>AI Coach</TabsTrigger>
               <TabsTrigger value='drills'>Drills</TabsTrigger>
-              <TabsTrigger value='activity'>Recent Activity</TabsTrigger>
+              <TabsTrigger value='activity'>Recent activity</TabsTrigger>
             </TabsList>
 
             <TabsContent value='courses' className='space-y-6'>
+              <h2 className='sr-only'>My courses</h2>
               {enrollments.length === 0 ? (
-                <Card>
-                  <CardContent className='pt-6'>
-                    <div className='text-center py-8'>
-                      <BookOpen className='h-16 w-16 text-muted-foreground mx-auto mb-4' />
-                      <h3 className='text-lg font-semibold text-foreground mb-2'>
-                        No courses yet
-                      </h3>
-                      <p className='text-muted-foreground mb-4'>
-                        Start learning by enrolling in a course
-                      </p>
-                      <Button asChild>
-                        <Link href='/courses'>Browse Courses</Link>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <EmptyState
+                  icon={BookOpen}
+                  title='You haven’t enrolled in a course yet'
+                  description='Browse the catalog and enroll in a course — your progress, next lessons and stats will show up here.'
+                  action={
+                    <Button asChild>
+                      <Link href='/courses'>Browse courses</Link>
+                    </Button>
+                  }
+                />
               ) : (
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                   {enrollments.map((enrollment) => {
@@ -432,13 +405,13 @@ export default function DashboardPage() {
                     return (
                       <Card
                         key={enrollment.id}
-                        className='transition-colors hover:border-primary/45'
+                        className='overflow-hidden transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-sm'
                       >
-                        <CourseCover src={enrollment.course.imageUrl} title={enrollment.course.title} className="aspect-[16/6] rounded-t-lg" />
+                        <CourseCover src={enrollment.course.imageUrl} title={enrollment.course.title} className="aspect-[16/6]" />
                         <CardHeader>
-                          <div className='flex items-start justify-between'>
-                            <div className='flex-1'>
-                              <CardTitle className='text-lg mb-2'>
+                          <div className='flex items-start justify-between gap-3'>
+                            <div className='min-w-0 flex-1'>
+                              <CardTitle className='mb-2'>
                                 {enrollment.course.title}
                               </CardTitle>
                               <p className='text-sm text-muted-foreground mb-2'>
@@ -451,17 +424,26 @@ export default function DashboardPage() {
                             </div>
                             <Badge
                               variant={
-                                progress === 100 ? 'default' : 'secondary'
+                                progress === 100 ? 'success' : 'secondary'
                               }
                             >
-                              {progress}% Complete
+                              {progress === 100 ? <CheckCircle aria-hidden='true' /> : null}
+                              {progress}% complete
                             </Badge>
                           </div>
                         </CardHeader>
                         <CardContent>
                           <div className='space-y-4'>
                             <div>
-                              <Progress value={progress} className='h-2' />
+                              <Progress
+                                value={progress}
+                                className='h-2'
+                                role='progressbar'
+                                aria-valuemin={0}
+                                aria-valuemax={100}
+                                aria-valuenow={progress}
+                                aria-label={`${enrollment.course.title} progress`}
+                              />
                               <p className='text-xs text-muted-foreground mt-1'>
                                 {Array.isArray(courseProgress)
                                   ? courseProgress.filter((p) => p.completed)
@@ -472,9 +454,9 @@ export default function DashboardPage() {
                             </div>
 
                             {nextLesson && (
-                              <div className='bg-accent p-3 rounded-lg'>
-                                <p className='text-sm font-medium text-accent-foreground mb-1'>
-                                  Next lesson:
+                              <div className='rounded-lg bg-accent p-3'>
+                                <p className='mb-1 text-xs font-medium uppercase tracking-wide text-accent-foreground/80'>
+                                  Next lesson
                                 </p>
                                 <p className='text-sm text-accent-foreground'>
                                   {nextLesson.title}
@@ -487,21 +469,23 @@ export default function DashboardPage() {
                                 <Link href={`/courses/${enrollment.course.id}`}>
                                   {progress === 0 ? (
                                     <>
-                                      <Play className='h-4 w-4 mr-2' />
-                                      Start Course
+                                      <Play aria-hidden='true' />
+                                      Start course
                                     </>
                                   ) : (
                                     <>
-                                      <TrendingUp className='h-4 w-4 mr-2' />
+                                      <TrendingUp aria-hidden='true' />
                                       Continue
                                     </>
                                   )}
                                 </Link>
                               </Button>
                               {progress === 100 && (
-                                <Button variant='outline' size='sm'>
-                                  <CheckCircle className='h-4 w-4 mr-2' />
-                                  Review
+                                <Button variant='outline' size='sm' asChild>
+                                  <Link href={`/courses/${enrollment.course.id}`}>
+                                    <CheckCircle aria-hidden='true' />
+                                    Review
+                                  </Link>
                                 </Button>
                               )}
                             </div>
@@ -515,12 +499,13 @@ export default function DashboardPage() {
             </TabsContent>
 
             <TabsContent value='skills' className='space-y-6'>
+              <h2 className='sr-only'>Skill plan</h2>
               <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
                 <Card>
                   <CardHeader>
                     <div className="flex items-center gap-3">
                       <span className="flex size-10 items-center justify-center rounded-md bg-accent text-accent-foreground">
-                        <Route className="size-5" />
+                        <Route aria-hidden="true" className="size-5" />
                       </span>
                       <div>
                         <CardTitle>{recommendedTrack.name}</CardTitle>
@@ -534,7 +519,15 @@ export default function DashboardPage() {
                         <span className="font-medium text-foreground">Readiness score</span>
                         <span className="text-muted-foreground">{getAverageProgress()}%</span>
                       </div>
-                      <Progress value={getAverageProgress()} className="h-2" />
+                      <Progress
+                        value={getAverageProgress()}
+                        className="h-2"
+                        role="progressbar"
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={getAverageProgress()}
+                        aria-label="Readiness score"
+                      />
                     </div>
                     <div className="rounded-md border bg-background p-4">
                       <p className="text-sm font-semibold text-foreground">Next best action</p>
@@ -574,12 +567,13 @@ export default function DashboardPage() {
             </TabsContent>
 
             <TabsContent value='coach' className='space-y-6'>
+              <h2 className='sr-only'>AI coach</h2>
               <div className="grid gap-6 lg:grid-cols-[1fr_0.85fr]">
                 <Card>
                   <CardHeader>
                     <div className="flex items-center gap-3">
                       <span className="flex size-10 items-center justify-center rounded-md bg-accent text-accent-foreground">
-                        <Brain className="size-5" />
+                        <Brain aria-hidden="true" className="size-5" />
                       </span>
                       <div>
                         <CardTitle>AI study coach</CardTitle>
@@ -594,13 +588,21 @@ export default function DashboardPage() {
                       {coachPrompts.map((prompt) => (
                         <button
                           key={prompt}
-                          className="rounded-md border bg-background p-4 text-left text-sm leading-6 text-foreground transition-colors hover:border-primary/45"
+                          className="rounded-lg border bg-background p-4 text-left text-sm leading-6 text-foreground transition-colors hover:border-primary/40 hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-60"
                           disabled={Boolean(coachLoadingPrompt)}
+                          aria-busy={coachLoadingPrompt === prompt}
                           onClick={() => handleCoachPrompt(prompt)}
                           type="button"
                         >
-                          <Sparkles className="mb-3 size-4 text-primary" />
-                          {coachLoadingPrompt === prompt ? 'Asking coach...' : prompt}
+                          {coachLoadingPrompt === prompt ? (
+                            <Spinner className="mb-3 text-primary" />
+                          ) : (
+                            <Sparkles aria-hidden="true" className="mb-3 size-4 text-primary" />
+                          )}
+                          <span className="block">{prompt}</span>
+                          {coachLoadingPrompt === prompt ? (
+                            <span className="mt-1 block text-xs text-muted-foreground">Asking coach…</span>
+                          ) : null}
                         </button>
                       ))}
                     </div>
@@ -612,17 +614,41 @@ export default function DashboardPage() {
                     <CardTitle>Recommended intervention</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="rounded-md border bg-background p-4">
+                    <div className="rounded-lg border bg-background p-4" aria-live="polite">
                       <p className="text-sm font-semibold text-foreground">Coach response</p>
                       {coachError ? (
-                        <p className="mt-2 text-sm leading-6 text-destructive">{coachError}</p>
+                        <Alert variant="destructive" className="mt-3">
+                          <AlertCircle aria-hidden="true" />
+                          <AlertDescription>
+                            <p>{coachError}</p>
+                            {lastCoachPrompt ? (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="mt-2"
+                                disabled={Boolean(coachLoadingPrompt)}
+                                onClick={() => handleCoachPrompt(lastCoachPrompt)}
+                              >
+                                <RotateCcw aria-hidden="true" />
+                                Try again
+                              </Button>
+                            ) : null}
+                          </AlertDescription>
+                        </Alert>
+                      ) : coachLoadingPrompt ? (
+                        <div className="mt-3 space-y-2" aria-hidden="true">
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-4 w-5/6" />
+                          <Skeleton className="h-4 w-2/3" />
+                        </div>
                       ) : coachResponse ? (
                         <div className="mt-2 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
                           {coachResponse}
                         </div>
                       ) : (
                         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                          Choose a prompt to get personalized guidance from OpenRouter using your course context.
+                          Choose a prompt to get personalized guidance based on the courses you’re taking.
                         </p>
                       )}
                     </div>
@@ -638,12 +664,13 @@ export default function DashboardPage() {
             </TabsContent>
 
             <TabsContent value='drills' className='space-y-6'>
+              <h2 className='sr-only'>Drills</h2>
               <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
                 <Card>
                   <CardHeader>
                     <div className="flex items-center gap-3">
                       <span className="flex size-10 items-center justify-center rounded-md bg-accent text-accent-foreground">
-                        <Flame className="size-5" />
+                        <Flame aria-hidden="true" className="size-5" />
                       </span>
                       <div>
                         <CardTitle>{getLearningStreak()} day momentum</CardTitle>
@@ -654,7 +681,15 @@ export default function DashboardPage() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <Progress value={Math.min(100, getLearningStreak() * 14)} className="h-2" />
+                    <Progress
+                      value={Math.min(100, getLearningStreak() * 14)}
+                      className="h-2"
+                      role="progressbar"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={Math.min(100, getLearningStreak() * 14)}
+                      aria-label="Weekly momentum"
+                    />
                     <p className="mt-3 text-sm leading-6 text-muted-foreground">
                       Complete one drill after each lesson to convert passive watching into active recall.
                     </p>
@@ -667,7 +702,7 @@ export default function DashboardPage() {
                       <CardHeader>
                         <div className="flex items-center gap-3">
                           <span className="flex size-9 items-center justify-center rounded-md border bg-background text-primary">
-                            <MessageSquareText className="size-4" />
+                            <MessageSquareText aria-hidden="true" className="size-4" />
                           </span>
                           <CardTitle className="text-base">{challenge.title}</CardTitle>
                         </div>
@@ -682,29 +717,37 @@ export default function DashboardPage() {
             </TabsContent>
 
             <TabsContent value='activity' className='space-y-6'>
+              <h2 className='sr-only'>Recent activity</h2>
               <Card>
                 <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
+                  <CardTitle>Recently enrolled</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {getRecentActivity().length === 0 ? (
-                    <div className='text-center py-8'>
-                      <Clock className='h-16 w-16 text-muted-foreground mx-auto mb-4' />
-                      <p className='text-muted-foreground'>No recent activity</p>
-                    </div>
+                    <EmptyState
+                      size='sm'
+                      icon={Clock}
+                      title='No activity yet'
+                      description='Courses you enroll in will appear here so you can jump back in quickly.'
+                      action={
+                        <Button asChild size='sm' variant='outline'>
+                          <Link href='/courses'>Find a course</Link>
+                        </Button>
+                      }
+                    />
                   ) : (
-                    <div className='space-y-4'>
+                    <ul className='divide-y'>
                       {getRecentActivity().map((enrollment) => (
-                        <div
+                        <li
                           key={enrollment.id}
-                          className='flex items-center justify-between p-4 bg-muted rounded-lg'
+                          className='flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0'
                         >
-                          <div className='flex items-center space-x-3'>
-                            <div className='bg-accent p-2 rounded-full'>
-                              <BookOpen className='h-4 w-4 text-primary' />
-                            </div>
-                            <div>
-                              <p className='font-medium'>
+                          <div className='flex min-w-0 items-center gap-3'>
+                            <span className='flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground'>
+                              <BookOpen aria-hidden='true' className='size-4' />
+                            </span>
+                            <div className='min-w-0'>
+                              <p className='truncate font-medium'>
                                 {enrollment.course.title}
                               </p>
                               <p className='text-sm text-muted-foreground'>
@@ -715,14 +758,14 @@ export default function DashboardPage() {
                               </p>
                             </div>
                           </div>
-                          <Button variant='ghost' size='sm' asChild className=' cursor-pointer'>
+                          <Button variant='ghost' size='sm' asChild>
                             <Link href={`/courses/${enrollment.course.id}`}>
-                              View Course
+                              View<span className='sr-only'> {enrollment.course.title}</span>
                             </Link>
                           </Button>
-                        </div>
+                        </li>
                       ))}
-                    </div>
+                    </ul>
                   )}
                 </CardContent>
               </Card>
@@ -731,6 +774,33 @@ export default function DashboardPage() {
         </div>
       </main>
       <Footer />
+    </div>
+  );
+}
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  hint,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: React.ReactNode;
+  hint: string;
+}) {
+  return (
+    <div className='surface flex flex-col gap-3 p-4 sm:p-5'>
+      <dt className='flex items-center justify-between gap-2 text-sm font-medium text-muted-foreground'>
+        {label}
+        <span className='flex size-8 shrink-0 items-center justify-center rounded-md bg-accent text-accent-foreground'>
+          <Icon aria-hidden='true' className='size-4' />
+        </span>
+      </dt>
+      <dd className='space-y-1'>
+        <span className='block text-2xl font-semibold tracking-tight tabular-nums text-foreground'>{value}</span>
+        <span className='block text-xs text-muted-foreground'>{hint}</span>
+      </dd>
     </div>
   );
 }

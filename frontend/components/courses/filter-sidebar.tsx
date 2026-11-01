@@ -1,123 +1,97 @@
 "use client";
 
-import { useState } from "react";
+import { useId } from "react";
+import { Search, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
-interface FilterOptions {
-  categories: string[];
-  levels: string[];
-  priceRange: [number, number];
-}
+export type CourseLength = "short" | "medium" | "long";
 
-interface FilterSidebarProps {
-  onFilterChange?: (filters: FilterOptions) => void;
-}
+export const courseLengths: { value: CourseLength; label: string; hint: string }[] = [
+  { value: "short", label: "Short", hint: "Up to 5 lessons" },
+  { value: "medium", label: "Medium", hint: "6–12 lessons" },
+  { value: "long", label: "In-depth", hint: "13+ lessons" },
+];
 
-export function FilterSidebar({ onFilterChange }: FilterSidebarProps) {
-  const [filters, setFilters] = useState<FilterOptions>({
-    categories: ["Design & Visuals"],
-    levels: [],
-    priceRange: [0, 500],
-  });
-
-  const handleCategoryChange = (category: string) => {
-    const updated = filters.categories.includes(category)
-      ? filters.categories.filter((c) => c !== category)
-      : [...filters.categories, category];
-
-    const newFilters = { ...filters, categories: updated };
-    setFilters(newFilters);
-    onFilterChange?.(newFilters);
-  };
-
-  const handleLevelChange = (level: string) => {
-    const updated = filters.levels.includes(level)
-      ? filters.levels.filter((l) => l !== level)
-      : [...filters.levels, level];
-
-    const newFilters = { ...filters, levels: updated };
-    setFilters(newFilters);
-    onFilterChange?.(newFilters);
-  };
-
-  const handlePriceChange = (value: number) => {
-    const newFilters = { ...filters, priceRange: [0, value] as [number, number] };
-    setFilters(newFilters);
-    onFilterChange?.(newFilters);
-  };
-
-  const categories = ["Design & Visuals", "Development", "Business Strategy", "Marketing"];
-  const levels = ["All Levels", "Beginner", "Advanced"];
-
-  return (
-    <aside className="w-full flex-shrink-0 lg:w-72">
-      <section className="rounded-lg border bg-card p-5">
-        <h3 className="mb-6 flex items-center gap-2 text-sm font-semibold text-foreground">
-          Filters
-        </h3>
-        <div className="space-y-8">
-          <div>
-            <span className="mb-4 block text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              Category
-            </span>
-            <div className="space-y-3">
-              {categories.map((category) => (
-                <label key={category} className="flex items-center gap-3 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    checked={filters.categories.includes(category)}
-                    onChange={() => handleCategoryChange(category)}
-                    className="size-4 rounded border-input bg-background accent-primary"
-                  />
-                  <span className="text-sm text-muted-foreground transition-colors group-hover:text-foreground">
-                    {category}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <span className="mb-4 block text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              Level
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {levels.map((level) => (
-                <button
-                  key={level}
-                  onClick={() => handleLevelChange(level)}
-                  className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-                    filters.levels.includes(level)
-                      ? "border-primary bg-accent text-accent-foreground"
-                      : "border-border bg-background text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {level}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <span className="mb-4 block text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              Price Range
-            </span>
-            <input
-              type="range"
-              min="0"
-              max="500"
-              value={filters.priceRange[1]}
-              onChange={(e) => handlePriceChange(Number(e.target.value))}
-              className="h-2 w-full cursor-pointer appearance-none rounded-full bg-muted accent-primary"
-            />
-            <div className="mt-2 flex justify-between text-sm font-medium text-muted-foreground">
-              <span>$0</span>
-              <span>${filters.priceRange[1]}+</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-    </aside>
+export function matchesLength(lessons: number, lengths: CourseLength[]) {
+  if (lengths.length === 0) return true;
+  return lengths.some((l) =>
+    l === "short" ? lessons <= 5 : l === "medium" ? lessons >= 6 && lessons <= 12 : lessons >= 13
   );
 }
 
+export interface CourseFilters {
+  query: string;
+  lengths: CourseLength[];
+}
+
+interface FilterSidebarProps {
+  filters: CourseFilters;
+  onChange: (filters: CourseFilters) => void;
+  onReset: () => void;
+}
+
+export function FilterSidebar({ filters, onChange, onReset }: FilterSidebarProps) {
+  const searchId = useId();
+  const active = filters.query.trim() !== "" || filters.lengths.length > 0;
+
+  const toggleLength = (value: CourseLength) =>
+    onChange({
+      ...filters,
+      lengths: filters.lengths.includes(value)
+        ? filters.lengths.filter((l) => l !== value)
+        : [...filters.lengths, value],
+    });
+
+  return (
+    <aside aria-labelledby={`${searchId}-heading`} className="w-full shrink-0 lg:sticky lg:top-24 lg:w-64 lg:self-start">
+      <div className="surface space-y-6 p-5">
+        <div className="flex items-center justify-between">
+          <h2 id={`${searchId}-heading`} className="text-sm font-semibold text-foreground">
+            Filters
+          </h2>
+          {active ? (
+            <Button type="button" variant="ghost" size="sm" onClick={onReset} className="-mr-2 h-7 text-muted-foreground">
+              <X aria-hidden="true" />
+              Clear
+            </Button>
+          ) : null}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor={searchId}>Search</Label>
+          <div className="relative">
+            <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              id={searchId}
+              type="search"
+              placeholder="Title or topic"
+              value={filters.query}
+              onChange={(e) => onChange({ ...filters, query: e.target.value })}
+              className="pl-9"
+            />
+          </div>
+        </div>
+
+        <fieldset className="space-y-3">
+          <legend className="mb-3 text-sm font-medium text-foreground">Course length</legend>
+          {courseLengths.map((length) => (
+            <label key={length.value} className="flex cursor-pointer items-start gap-3 rounded-md">
+              <input
+                type="checkbox"
+                checked={filters.lengths.includes(length.value)}
+                onChange={() => toggleLength(length.value)}
+                className="mt-0.5 size-4 shrink-0 cursor-pointer rounded border-input accent-primary"
+              />
+              <span className="text-sm leading-5">
+                <span className="block font-medium text-foreground">{length.label}</span>
+                <span className="block text-muted-foreground">{length.hint}</span>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+      </div>
+    </aside>
+  );
+}

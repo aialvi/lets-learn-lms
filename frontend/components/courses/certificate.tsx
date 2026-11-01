@@ -4,10 +4,24 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Download, Award, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
+import { ErrorState } from '@/components/ui/error-state';
+import { LoadingRegion, Skeleton } from '@/components/ui/skeleton';
+import { Download, Award, ArrowLeft, CheckCircle2, FileQuestion } from 'lucide-react';
+
+// Fixed, print-safe palette for the certificate artwork (independent of theme).
+const cert = {
+  bgFrom: '#f4faf7',
+  bgTo: '#e3f1ea',
+  border: '#a8d5c2',
+  accent: '#1b6b57',
+  heading: '#0f3d31',
+  body: '#1f4f42',
+};
 import { 
   fetchCourseById,
   fetchCompletionCertificate,
@@ -38,17 +52,18 @@ export default function Certificate({ courseId }: CertificateProps) {
   const [progress, setProgress] = useState(0);
   const [completedAt, setCompletedAt] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   const loadCertificateData = useCallback(async () => {
     try {
       setIsLoading(true);
-      
+      setLoadError(false);
+
       const courseData = await fetchCourseById(courseId);
       setCourse(courseData);
       
       // Get video progress data
       const progressData = await getCourseVideosProgress(courseId, session!.accessToken);
-      console.log('Progress data:', progressData);
       
       // Calculate overall progress
       let overallProgress = 0;
@@ -71,7 +86,7 @@ export default function Certificate({ courseId }: CertificateProps) {
       
     } catch (error) {
       console.error('Error loading certificate data:', error);
-      toast.error('Failed to load certificate data');
+      setLoadError(true);
     } finally {
       setIsLoading(false);
     }
@@ -98,38 +113,15 @@ export default function Certificate({ courseId }: CertificateProps) {
       
       // Create a style element to override problematic CSS
       const style = document.createElement('style');
+      // html2canvas can't parse modern color functions (oklab/color-mix) that the
+      // global theme applies to outlines and shadows, so neutralize them here.
+      // Artwork colors are inline hex values and render as-is.
       style.textContent = `
+        .certificate-override,
         .certificate-override * {
-          color: rgb(30, 64, 175) !important; /* blue-800 */
-          background-color: rgb(255, 255, 255) !important;
-          border-color: rgb(96, 165, 250) !important; /* blue-300 */
-        }
-        .certificate-override .bg-gradient-to-br {
-          background: linear-gradient(135deg, rgb(239, 246, 255), rgb(224, 231, 255)) !important;
-        }
-        .certificate-override .bg-blue-600 {
-          background-color: rgb(37, 99, 235) !important;
-        }
-        .certificate-override .text-blue-900 {
-          color: rgb(30, 58, 138) !important;
-        }
-        .certificate-override .text-blue-800 {
-          color: rgb(30, 64, 175) !important;
-        }
-        .certificate-override .text-blue-700 {
-          color: rgb(29, 78, 216) !important;
-        }
-        .certificate-override .text-blue-600 {
-          color: rgb(37, 99, 235) !important;
-        }
-        .certificate-override .border-blue-200 {
-          border-color: rgb(191, 219, 254) !important;
-        }
-        .certificate-override .border-blue-300 {
-          border-color: rgb(147, 197, 253) !important;
-        }
-        .certificate-override .text-white {
-          color: rgb(255, 255, 255) !important;
+          outline-color: transparent !important;
+          box-shadow: none !important;
+          text-decoration-color: currentColor !important;
         }
       `;
       document.head.appendChild(style);
@@ -162,7 +154,7 @@ export default function Certificate({ courseId }: CertificateProps) {
           link.download = `certificate-${course?.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.png`;
           link.click();
           URL.revokeObjectURL(url);
-          toast.success('Certificate downloaded successfully!');
+          toast.success('Certificate downloaded.');
         }
       }, 'image/png');
       
@@ -170,7 +162,7 @@ export default function Certificate({ courseId }: CertificateProps) {
       console.error('Error generating certificate:', error);
       
       // Fallback: Show a message with instructions to screenshot
-      toast.error('Certificate generation failed. Please take a screenshot of the certificate below to save it.');
+      toast.error("We couldn't create the image, so we've opened a printable version instead. Choose “Save as PDF” to keep a copy.");
       
       // Alternative: Try to print the certificate
       try {
@@ -181,10 +173,10 @@ export default function Certificate({ courseId }: CertificateProps) {
               <head>
                 <title>Certificate - ${course?.title}</title>
                 <style>
-                  body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+                  body { font-family: system-ui, -apple-system, Segoe UI, Arial, sans-serif; margin: 0; padding: 20px; }
                   .certificate { 
-                    background: linear-gradient(135deg, #eff6ff, #e0e7ff);
-                    border: 4px solid #bfdbfe;
+                    background: linear-gradient(135deg, #f4faf7, #e3f1ea);
+                    border: 4px solid #a8d5c2;
                     border-radius: 8px;
                     padding: 48px;
                     text-align: center;
@@ -194,7 +186,7 @@ export default function Certificate({ courseId }: CertificateProps) {
                     justify-content: center;
                   }
                   .icon { 
-                    background: #2563eb;
+                    background: #1b6b57;
                     color: white;
                     width: 80px;
                     height: 80px;
@@ -205,14 +197,14 @@ export default function Certificate({ courseId }: CertificateProps) {
                     margin: 0 auto 24px;
                     font-size: 24px;
                   }
-                  .title { font-size: 32px; font-weight: bold; color: #1e3a8a; margin-bottom: 24px; }
-                  .text { font-size: 18px; color: #1e40af; margin-bottom: 12px; }
-                  .name { font-size: 24px; font-weight: bold; color: #1e3a8a; margin: 16px 0; }
-                  .course { font-size: 24px; font-weight: bold; color: #1e3a8a; margin: 16px 0 24px; }
-                  .details { display: flex; justify-content: center; gap: 32px; color: #1d4ed8; margin-top: 24px; }
+                  .title { font-size: 32px; font-weight: bold; color: #0f3d31; margin-bottom: 24px; }
+                  .text { font-size: 18px; color: #1f4f42; margin-bottom: 12px; }
+                  .name { font-size: 24px; font-weight: bold; color: #0f3d31; margin: 16px 0; }
+                  .course { font-size: 24px; font-weight: bold; color: #0f3d31; margin: 16px 0 24px; }
+                  .details { display: flex; justify-content: center; gap: 32px; color: #1f4f42; margin-top: 24px; }
                   .detail { text-align: center; }
                   .detail-label { font-weight: bold; margin-bottom: 4px; }
-                  .footer { margin-top: 32px; padding-top: 24px; border-top: 2px solid #93c5fd; font-size: 14px; color: #2563eb; }
+                  .footer { margin-top: 32px; padding-top: 24px; border-top: 2px solid #a8d5c2; font-size: 14px; color: #1b6b57; }
                 </style>
               </head>
               <body>
@@ -257,137 +249,133 @@ export default function Certificate({ courseId }: CertificateProps) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Loading certificate...</p>
+      <LoadingRegion label='Loading certificate' className='mx-auto max-w-4xl space-y-6'>
+        <div className='flex justify-between'>
+          <Skeleton className='h-8 w-36' />
+          <Skeleton className='h-6 w-32' />
         </div>
-      </div>
+        <Skeleton className='h-10 w-72' />
+        <Skeleton className='h-[500px] w-full rounded-xl' />
+      </LoadingRegion>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <ErrorState
+        title="Couldn't load your certificate"
+        message='We had trouble checking your course progress. Check your connection and try again.'
+        onRetry={loadCertificateData}
+        action={
+          <Button variant='ghost' asChild>
+            <Link href={`/courses/${courseId}`}>Back to course</Link>
+          </Button>
+        }
+      />
     );
   }
 
   if (!course) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Course not found</h2>
-          <Button onClick={() => router.push('/courses')}>
-            Back to Courses
+      <EmptyState
+        icon={FileQuestion}
+        title='Course not found'
+        description='This course may have been removed, so we can’t show a certificate for it.'
+        action={
+          <Button asChild>
+            <Link href='/courses'>Browse courses</Link>
           </Button>
-        </div>
-      </div>
+        }
+      />
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <div className="flex items-center justify-between">
-        <Button
-          variant="ghost"
-          onClick={() => router.push(`/courses/${courseId}`)}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Course
+    <div className='mx-auto max-w-4xl space-y-8'>
+      <div className='flex flex-wrap items-center justify-between gap-3'>
+        <Button variant='ghost' size='sm' asChild className='-ml-2 text-muted-foreground'>
+          <Link href={`/courses/${courseId}`}>
+            <ArrowLeft aria-hidden='true' />
+            Back to course
+          </Link>
         </Button>
-        
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="text-green-600">
-            <CheckCircle className="h-4 w-4 mr-1" />
-            Course Completed
-          </Badge>
-        </div>
+        <Badge variant='success'>
+          <CheckCircle2 aria-hidden='true' />
+          Course completed
+        </Badge>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl flex items-center gap-2">
-            <Award className="h-6 w-6" />
-            Certificate of Completion
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            <div className="text-center">
-              <p className="text-lg text-muted-foreground mb-4">
-                Congratulations! You have successfully completed the course.
-              </p>
-              <Button
-                onClick={generateCertificate}
-                disabled={isGenerating}
-                size="lg"
-                className="mb-6 cursor-pointer"
-              >
-                {isGenerating ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Download className="h-4 w-4 mr-2" />
-                    Download Certificate
-                  </>
-                )}
-              </Button>
-            </div>
+      <div className='flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between'>
+        <div>
+          <h1 className='page-title'>Your certificate</h1>
+          <p className='page-description mt-2'>
+            Congratulations on completing <span className='font-medium text-foreground'>{course.title}</span>.
+          </p>
+        </div>
+        <Button onClick={generateCertificate} disabled={isGenerating} aria-busy={isGenerating} size='lg'>
+          {isGenerating ? <Spinner /> : <Download aria-hidden='true' />}
+          {isGenerating ? 'Preparing download…' : 'Download certificate'}
+        </Button>
+      </div>
 
-            {/* Certificate Preview */}
-            <div
-              ref={certificateRef}
-              className="p-12 rounded-lg border-4 text-center shadow-lg"
-              style={{ 
-                minHeight: '500px',
-                background: 'linear-gradient(135deg, #eff6ff, #e0e7ff)',
-                borderColor: '#bfdbfe'
-              }}
-            >
-              <div className="space-y-6">
-                <div className="flex justify-center mb-6">
-                  <div className="p-4 rounded-full" style={{ backgroundColor: '#2563eb', color: '#ffffff' }}>
-                    <Award className="h-12 w-12" />
-                  </div>
-                </div>
-                
-                <h1 className="text-4xl font-bold mb-4" style={{ color: '#1e3a8a' }}>
-                  Certificate of Completion
-                </h1>
-                
-                <div className="text-lg" style={{ color: '#1e40af' }}>
-                  <p className="mb-2">This certifies that</p>
-                  <p className="text-2xl font-bold mb-4" style={{ color: '#1e3a8a' }}>
-                    {session?.user?.name || 'Student'}
-                  </p>
-                  <p className="mb-2">has successfully completed</p>
-                  <p className="text-2xl font-bold mb-6" style={{ color: '#1e3a8a' }}>
-                    {course.title}
-                  </p>
-                </div>
-                
-                <div className="flex justify-center items-center gap-8" style={{ color: '#1d4ed8' }}>
-                  <div className="text-center">
-                    <p className="font-semibold">Instructor</p>
-                    <p>{course.author.username}</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="font-semibold">Date</p>
-                    <p>{completedAt}</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="font-semibold">Progress</p>
-                    <p>{Math.round(progress)}%</p>
-                  </div>
-                </div>
-                
-                <div className="mt-8 pt-6 border-t-2" style={{ borderColor: '#93c5fd' }}>
-                  <p className="text-sm" style={{ color: '#2563eb' }}>
-                    Let&apos;s Learn - Online Learning Platform
-                  </p>
-                </div>
+      {/* Certificate artwork: fixed colors so it looks the same in any theme and when exported. */}
+      <div className='overflow-x-auto rounded-xl'>
+        <div
+          ref={certificateRef}
+          role='img'
+          aria-label={`Certificate of completion: ${session?.user?.name || 'Student'} completed ${course.title}, ${completedAt}.`}
+          className='min-w-[36rem] rounded-xl border-4 p-8 text-center sm:p-12'
+          style={{
+            minHeight: '500px',
+            background: `linear-gradient(135deg, ${cert.bgFrom}, ${cert.bgTo})`,
+            borderColor: cert.border,
+          }}
+        >
+          <div className='space-y-6' aria-hidden='true'>
+            <div className='mb-6 flex justify-center'>
+              <div className='rounded-full p-4' style={{ backgroundColor: cert.accent, color: '#ffffff' }}>
+                <Award className='size-12' />
               </div>
             </div>
+
+            <p className='mb-4 text-4xl font-bold' style={{ color: cert.heading }}>
+              Certificate of Completion
+            </p>
+
+            <div className='text-lg' style={{ color: cert.body }}>
+              <p className='mb-2'>This certifies that</p>
+              <p className='mb-4 text-2xl font-bold' style={{ color: cert.heading }}>
+                {session?.user?.name || 'Student'}
+              </p>
+              <p className='mb-2'>has successfully completed</p>
+              <p className='mb-6 text-2xl font-bold' style={{ color: cert.heading }}>
+                {course.title}
+              </p>
+            </div>
+
+            <div className='flex items-center justify-center gap-8' style={{ color: cert.body }}>
+              <div className='text-center'>
+                <p className='font-semibold'>Instructor</p>
+                <p>{course.author.username}</p>
+              </div>
+              <div className='text-center'>
+                <p className='font-semibold'>Date</p>
+                <p>{completedAt}</p>
+              </div>
+              <div className='text-center'>
+                <p className='font-semibold'>Progress</p>
+                <p>{Math.round(progress)}%</p>
+              </div>
+            </div>
+
+            <div className='mt-8 border-t-2 pt-6' style={{ borderColor: cert.border }}>
+              <p className='text-sm' style={{ color: cert.accent }}>
+                Let&apos;s Learn — Online Learning Platform
+              </p>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

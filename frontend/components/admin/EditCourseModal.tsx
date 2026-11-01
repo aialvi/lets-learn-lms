@@ -10,7 +10,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
+import { Spinner } from '@/components/ui/spinner';
+import { FormAlert } from './admin-ui';
 import {
   Form,
   FormControl,
@@ -18,6 +21,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -85,6 +89,7 @@ export function EditCourseModal({
   onSubmit,
 }: EditCourseModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const form = useForm<CourseFormValues>({
     resolver: zodResolver(courseFormSchema),
@@ -100,25 +105,27 @@ export function EditCourseModal({
 
   const handleSubmit = async (data: CourseFormValues) => {
     setIsSubmitting(true);
+    setSubmitError(null);
     try {
       await onSubmit(data);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "We couldn't save changes to this course.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && !isSubmitting && onClose()}>
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Edit Course</DialogTitle>
+          <DialogTitle>Edit course</DialogTitle>
+          <DialogDescription>Changes are visible to learners as soon as you save.</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <FormField control={form.control} name="imageUrl" render={({ field }) => (
-              <FormItem><FormLabel>Cover image URL</FormLabel><FormControl><Input placeholder="https://images.unsplash.com/…" {...field} /></FormControl><FormMessage /></FormItem>
-            )} />
+            <FormAlert message={submitError} />
             <FormField
               control={form.control}
               name="title"
@@ -156,7 +163,7 @@ export function EditCourseModal({
               name="price"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Price ($)</FormLabel>
+                  <FormLabel>Price (USD)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -183,7 +190,7 @@ export function EditCourseModal({
                     defaultValue={field.value || ""}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select an instructor" />
                       </SelectTrigger>
                     </FormControl>
@@ -205,17 +212,33 @@ export function EditCourseModal({
 
             <FormField
               control={form.control}
+              name="imageUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cover image URL</FormLabel>
+                  <FormControl>
+                    <Input placeholder="https://images.unsplash.com/…" {...field} />
+                  </FormControl>
+                  <FormDescription>Optional. A full https:// URL or a path under /images/.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="isPublished"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                <FormItem className="flex flex-row items-start gap-3 space-y-0 rounded-lg border p-4">
                   <FormControl>
                     <Checkbox
                       checked={field.value}
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
-                  <div className="space-y-1 leading-none">
+                  <div className="space-y-1">
                     <FormLabel>Published</FormLabel>
+                    <FormDescription>Published courses appear in the public catalog.</FormDescription>
                   </div>
                 </FormItem>
               )}
@@ -231,7 +254,8 @@ export function EditCourseModal({
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Saving...' : 'Save Changes'}
+                {isSubmitting ? <Spinner /> : null}
+                {isSubmitting ? 'Saving…' : 'Save changes'}
               </Button>
             </DialogFooter>
           </form>

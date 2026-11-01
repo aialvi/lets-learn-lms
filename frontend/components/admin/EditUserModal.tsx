@@ -1,11 +1,21 @@
-import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+'use client';
+
+import { useEffect, useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
 import { Checkbox } from '@/components/ui/checkbox';
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Field, FormAlert } from './admin-ui';
 import { User, UpdateUserData } from '@/types';
 
 interface EditUserModalProps {
@@ -24,6 +34,7 @@ export function EditUserModal({ user, isOpen, onClose, onSubmit }: EditUserModal
     isActive: true,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -41,52 +52,30 @@ export function EditUserModal({ user, isOpen, onClose, onSubmit }: EditUserModal
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user types
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
-    }
-  };
-
-  const handleRoleChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, role: value }));
-  };
-
-  const handleCheckboxChange = (checked: boolean) => {
-    setFormData((prev) => ({ ...prev, isActive: checked }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
-    if (!formData.username.trim()) {
-      newErrors.username = 'Username is required';
-    }
-    
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
-    }
-    
+    if (!formData.username.trim()) newErrors.username = 'Enter a username.';
+    if (!formData.email.trim()) newErrors.email = 'Enter an email address.';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Enter an email address like name@example.com.';
     // Password can be empty for update
-    if (formData.password && formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-    
+    if (formData.password && formData.password.length < 6) newErrors.password = 'Use at least 6 characters.';
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return newErrors;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
+    setSubmitError(null);
+    const firstInvalid = Object.keys(validateForm())[0];
+    if (firstInvalid) {
+      e.currentTarget.querySelector<HTMLElement>(`#edit-user-${firstInvalid}`)?.focus();
       return;
     }
-    
     try {
       setIsSubmitting(true);
-      
       // Don't send empty password
       let dataToSubmit: UpdateUserData;
       if (!formData.password) {
@@ -96,99 +85,85 @@ export function EditUserModal({ user, isOpen, onClose, onSubmit }: EditUserModal
       } else {
         dataToSubmit = formData;
       }
-      
       await onSubmit(dataToSubmit);
     } catch (error) {
-      console.error('Error updating user:', error);
+      setSubmitError(error instanceof Error ? error.message : "We couldn't save changes to this user.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && !isSubmitting && onClose()}>
+      <DialogContent className='sm:max-w-md'>
         <DialogHeader>
-          <DialogTitle>Edit User</DialogTitle>
+          <DialogTitle>Edit user</DialogTitle>
+          <DialogDescription>Update {user.username}&apos;s details, role, and access.</DialogDescription>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
-            <Input
-              id="username"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-            />
-            {errors.username && (
-              <p className="text-red-500 text-sm">{errors.username}</p>
+
+        <form onSubmit={handleSubmit} noValidate className='space-y-4'>
+          <FormAlert message={submitError} />
+          <Field id='edit-user-username' label='Username' error={errors.username}>
+            {(props) => <Input {...props} name='username' value={formData.username} onChange={handleChange} />}
+          </Field>
+          <Field id='edit-user-email' label='Email' error={errors.email}>
+            {(props) => <Input {...props} name='email' type='email' value={formData.email} onChange={handleChange} />}
+          </Field>
+          <Field
+            id='edit-user-password'
+            label='New password'
+            hint='Leave blank to keep the current password.'
+            error={errors.password}
+          >
+            {(props) => (
+              <Input
+                {...props}
+                name='password'
+                type='password'
+                autoComplete='new-password'
+                value={formData.password}
+                onChange={handleChange}
+              />
             )}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-            />
-            {errors.email && (
-              <p className="text-red-500 text-sm">{errors.email}</p>
+          </Field>
+          <Field id='edit-user-role' label='Role'>
+            {(props) => (
+              <Select value={formData.role} onValueChange={(role) => setFormData((prev) => ({ ...prev, role }))}>
+                <SelectTrigger {...props} className='w-full'>
+                  <SelectValue placeholder='Select role' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='user'>User</SelectItem>
+                  <SelectItem value='instructor'>Instructor</SelectItem>
+                  <SelectItem value='admin'>Admin</SelectItem>
+                </SelectContent>
+              </Select>
             )}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="password">Password (leave empty to keep current)</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="••••••••"
-            />
-            {errors.password && (
-              <p className="text-red-500 text-sm">{errors.password}</p>
-            )}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="role">Role</Label>
-            <Select
-              value={formData.role}
-              onValueChange={handleRoleChange}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="user">User</SelectItem>
-                <SelectItem value="instructor">Instructor</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="isActive" 
+          </Field>
+          <div className='flex items-start gap-3 rounded-lg border p-4'>
+            <Checkbox
+              id='edit-user-active'
               checked={formData.isActive}
-              onCheckedChange={handleCheckboxChange}
+              onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, isActive: checked === true }))}
+              aria-describedby='edit-user-active-hint'
             />
-            <Label htmlFor="isActive">Active Account</Label>
+            <div className='space-y-1'>
+              <Label htmlFor='edit-user-active'>Active account</Label>
+              <p id='edit-user-active-hint' className='text-sm text-muted-foreground'>
+                Inactive users can&apos;t sign in.
+              </p>
+            </div>
           </div>
-          
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+
+          <DialogFooter className='pt-2'>
+            <Button type='button' variant='outline' onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : 'Save Changes'}
+            <Button type='submit' disabled={isSubmitting}>
+              {isSubmitting ? <Spinner /> : null}
+              {isSubmitting ? 'Saving…' : 'Save changes'}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

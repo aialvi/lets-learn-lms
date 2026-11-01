@@ -1,12 +1,22 @@
+'use client';
+
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-
+import { Field, FormAlert } from './admin-ui';
 import { CreateCourseData } from '@/types';
 
 interface Instructor {
@@ -21,190 +31,158 @@ interface CreateCourseModalProps {
   instructors: Instructor[];
 }
 
+const emptyForm = {
+  title: '',
+  description: '',
+  price: 0,
+  instructorId: '',
+  isPublished: false,
+  imageUrl: '',
+};
+
 export function CreateCourseModal({ isOpen, onClose, onSubmit, instructors }: CreateCourseModalProps) {
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    price: 0,
-    instructorId: '',
-    isPublished: false,
-    imageUrl: '',
-  });
+  const [formData, setFormData] = useState(emptyForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ 
-      ...prev, 
-      [name]: name === 'price' ? parseFloat(value) || 0 : value
-    }));
-    // Clear error when user types
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
-    }
-  };
-
-  const handleInstructorChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, instructorId: value }));
-    if (errors.instructorId) {
-      setErrors((prev) => ({ ...prev, instructorId: '' }));
-    }
-  };
-
-  const handleCheckboxChange = (checked: boolean) => {
-    setFormData((prev) => ({ ...prev, isPublished: checked }));
+    setFormData((prev) => ({ ...prev, [name]: name === 'price' ? parseFloat(value) || 0 : value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
-    if (!formData.title.trim()) {
-      newErrors.title = 'Title is required';
-    }
-    
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
-    }
-    
-    if (formData.price < 0) {
-      newErrors.price = 'Price cannot be negative';
-    }
-    
-    if (!formData.instructorId) {
-      newErrors.instructorId = 'Instructor is required';
-    }
-    
+    if (!formData.title.trim()) newErrors.title = 'Enter a course title.';
+    if (!formData.description.trim()) newErrors.description = 'Add a short description so learners know what to expect.';
+    if (formData.price < 0) newErrors.price = 'Price can’t be negative. Use 0 for a free course.';
+    if (!formData.instructorId) newErrors.instructorId = 'Choose an instructor for this course.';
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return newErrors;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
+    setSubmitError(null);
+    const firstInvalid = Object.keys(validateForm())[0];
+    if (firstInvalid) {
+      e.currentTarget.querySelector<HTMLElement>(`#create-course-${firstInvalid}`)?.focus();
       return;
     }
-    
     try {
       setIsSubmitting(true);
       await onSubmit(formData);
-      setFormData({
-        title: '',
-        description: '',
-        price: 0,
-        instructorId: '',
-        isPublished: false,
-        imageUrl: '',
-      });
+      setFormData(emptyForm);
     } catch (error) {
-      console.error('Error creating course:', error);
+      setSubmitError(error instanceof Error ? error.message : "We couldn't create this course.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const close = () => {
+    setErrors({});
+    setSubmitError(null);
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && !isSubmitting && close()}>
+      <DialogContent className='max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg'>
         <DialogHeader>
-          <DialogTitle>Create New Course</DialogTitle>
+          <DialogTitle>Add course</DialogTitle>
+          <DialogDescription>You can add lessons once the course exists.</DialogDescription>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
-            <Input
-              id="title"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-            />
-            {errors.title && (
-              <p className="text-red-500 text-sm">{errors.title}</p>
+
+        <form onSubmit={handleSubmit} noValidate className='space-y-4'>
+          <FormAlert message={submitError} />
+          <Field id='create-course-title' label='Title' error={errors.title}>
+            {(props) => <Input {...props} name='title' value={formData.title} onChange={handleChange} />}
+          </Field>
+          <Field id='create-course-description' label='Description' error={errors.description}>
+            {(props) => (
+              <Textarea {...props} name='description' value={formData.description} onChange={handleChange} rows={4} />
             )}
+          </Field>
+          <div className='grid gap-4 sm:grid-cols-2'>
+            <Field id='create-course-price' label='Price (USD)' hint='Use 0 for free.' error={errors.price}>
+              {(props) => (
+                <Input
+                  {...props}
+                  name='price'
+                  type='number'
+                  inputMode='decimal'
+                  step='0.01'
+                  min='0'
+                  value={formData.price}
+                  onChange={handleChange}
+                />
+              )}
+            </Field>
+            <Field id='create-course-instructorId' label='Instructor' error={errors.instructorId}>
+              {(props) => (
+                <Select
+                  value={formData.instructorId}
+                  onValueChange={(instructorId) => {
+                    setFormData((prev) => ({ ...prev, instructorId }));
+                    if (errors.instructorId) setErrors((prev) => ({ ...prev, instructorId: '' }));
+                  }}
+                >
+                  <SelectTrigger {...props} className='w-full'>
+                    <SelectValue placeholder='Select instructor' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {instructors.map((instructor) => (
+                      <SelectItem key={instructor.id} value={instructor.id.toString()}>
+                        {instructor.username}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </Field>
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows={4}
-            />
-            {errors.description && (
-              <p className="text-red-500 text-sm">{errors.description}</p>
+          <Field
+            id='create-course-imageUrl'
+            label='Cover image URL'
+            hint='Optional. A full https:// URL or a path under /images/.'
+          >
+            {(props) => (
+              <Input
+                {...props}
+                name='imageUrl'
+                type='url'
+                value={formData.imageUrl}
+                onChange={handleChange}
+                placeholder='https://example.com/image.jpg'
+              />
             )}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="price">Price ($)</Label>
-            <Input
-              id="price"
-              name="price"
-              type="number"
-              step="0.01"
-              min="0"
-              value={formData.price}
-              onChange={handleChange}
-            />
-            {errors.price && (
-              <p className="text-red-500 text-sm">{errors.price}</p>
-            )}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="imageUrl">Image URL (optional)</Label>
-            <Input
-              id="imageUrl"
-              name="imageUrl"
-              value={formData.imageUrl}
-              onChange={handleChange}
-              placeholder="https://example.com/image.jpg"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="instructorId">Instructor</Label>
-            <Select
-              value={formData.instructorId}
-              onValueChange={handleInstructorChange}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select instructor" />
-              </SelectTrigger>
-              <SelectContent>
-                {instructors.map((instructor) => (
-                  <SelectItem key={instructor.id} value={instructor.id.toString()}>
-                    {instructor.username}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.instructorId && (
-              <p className="text-red-500 text-sm">{errors.instructorId}</p>
-            )}
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="isPublished" 
+          </Field>
+          <div className='flex items-start gap-3 rounded-lg border p-4'>
+            <Checkbox
+              id='create-course-published'
               checked={formData.isPublished}
-              onCheckedChange={handleCheckboxChange}
+              onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, isPublished: checked === true }))}
+              aria-describedby='create-course-published-hint'
             />
-            <Label htmlFor="isPublished">Publish Course</Label>
+            <div className='space-y-1'>
+              <Label htmlFor='create-course-published'>Publish now</Label>
+              <p id='create-course-published-hint' className='text-sm text-muted-foreground'>
+                Published courses appear in the public catalog.
+              </p>
+            </div>
           </div>
-          
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+
+          <DialogFooter className='pt-2'>
+            <Button type='button' variant='outline' onClick={close} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating...' : 'Create Course'}
+            <Button type='submit' disabled={isSubmitting}>
+              {isSubmitting ? <Spinner /> : null}
+              {isSubmitting ? 'Adding…' : 'Add course'}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

@@ -16,14 +16,14 @@ export async function generateMetadata({
     const course = await fetchCourseById(id);
 
     return {
-      title: `${course.title} | Let's Learn`,
+      title: course.title,
       description:
         course.description || "Join this course on Let's Learn platform",
     };
-  } catch (error: unknown) {
+  } catch {
     return {
-      title: "Course Not Found | Let's Learn",
-      description: `The requested course could not be found.${error}`,
+      title: 'Course not found',
+      description: 'The requested course could not be found.',
     };
   }
 }
@@ -40,7 +40,7 @@ export default async function CourseDetailPage({
     return (
       <div className="flex min-h-screen flex-col bg-background">
         <MainNav />
-        <main className="flex-1">
+        <main id="main-content" className="flex-1">
           <CourseDetailContent course={course} />
         </main>
         <Footer />

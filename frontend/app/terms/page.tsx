@@ -1,6 +1,6 @@
 import { MainNav } from '@/components/layout/main-nav';
 import { Footer } from '@/components/layout/footer';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, } from '@/components/ui/card';
 import { 
   FileText, 
   Shield, 
@@ -10,14 +10,19 @@ import {
   Scale
 } from 'lucide-react';
 
+export const metadata = {
+  title: "Terms of service",
+  description: "The terms that govern use of Let's Learn.",
+};
+
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       <MainNav />
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <main id="main-content" className="container-page w-full flex-1 max-w-4xl py-12 md:py-16">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-4">
+          <h1 className="mb-4 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
             Terms of Service
           </h1>
           <p className="text-muted-foreground">
@@ -28,10 +33,10 @@ export default function TermsPage() {
         {/* Introduction */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold leading-tight tracking-tight flex items-center gap-2">
+              <FileText aria-hidden="true" className="h-5 w-5 text-primary" />
               Introduction
-            </CardTitle>
+            </h2>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground leading-relaxed">
@@ -45,14 +50,14 @@ export default function TermsPage() {
         {/* Account Terms */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold leading-tight tracking-tight flex items-center gap-2">
+              <Users aria-hidden="true" className="h-5 w-5 text-primary" />
               Account Terms
-            </CardTitle>
+            </h2>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <h4 className="font-semibold mb-2">Account Creation</h4>
+              <h3 className="font-semibold mb-2">Account Creation</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 You must create an account to access certain features of our Service. You are responsible 
                 for maintaining the confidentiality of your account credentials and for all activities 
@@ -60,14 +65,14 @@ export default function TermsPage() {
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">Account Eligibility</h4>
+              <h3 className="font-semibold mb-2">Account Eligibility</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 You must be at least 13 years old to use our Service. If you are under 18, you must have 
                 your parent or guardian&apos;s permission to use our Service.
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">Account Responsibilities</h4>
+              <h3 className="font-semibold mb-2">Account Responsibilities</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 You are responsible for providing accurate and complete information when creating your account 
                 and for keeping your account information updated.
@@ -79,14 +84,14 @@ export default function TermsPage() {
         {/* Service Usage */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold leading-tight tracking-tight flex items-center gap-2">
+              <Shield aria-hidden="true" className="h-5 w-5 text-primary" />
               Acceptable Use
-            </CardTitle>
+            </h2>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <h4 className="font-semibold mb-2">Permitted Uses</h4>
+              <h3 className="font-semibold mb-2">Permitted Uses</h3>
               <ul className="text-muted-foreground text-sm space-y-1 ml-4">
                 <li>• Access and use our courses for personal or educational purposes</li>
                 <li>• Participate in course discussions and forums</li>
@@ -95,7 +100,7 @@ export default function TermsPage() {
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">Prohibited Uses</h4>
+              <h3 className="font-semibold mb-2">Prohibited Uses</h3>
               <ul className="text-muted-foreground text-sm space-y-1 ml-4">
                 <li>• Share your account credentials with others</li>
                 <li>• Download or redistribute course content without permission</li>
@@ -110,28 +115,28 @@ export default function TermsPage() {
         {/* Payment Terms */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold leading-tight tracking-tight flex items-center gap-2">
+              <CreditCard aria-hidden="true" className="h-5 w-5 text-primary" />
               Payment Terms
-            </CardTitle>
+            </h2>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <h4 className="font-semibold mb-2">Course Purchases</h4>
+              <h3 className="font-semibold mb-2">Course Purchases</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 Some courses may require payment. All fees are clearly displayed before purchase. 
                 Payment is due immediately upon enrollment unless otherwise specified.
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">Refund Policy</h4>
+              <h3 className="font-semibold mb-2">Refund Policy</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 We offer a 30-day money-back guarantee for most courses. Refunds must be requested 
                 within 30 days of purchase and before completing more than 30% of the course content.
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">Subscription Services</h4>
+              <h3 className="font-semibold mb-2">Subscription Services</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 Some services may be offered on a subscription basis. Subscriptions automatically 
                 renew unless cancelled before the renewal date. You can cancel your subscription 
@@ -144,14 +149,14 @@ export default function TermsPage() {
         {/* Intellectual Property */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Scale className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold leading-tight tracking-tight flex items-center gap-2">
+              <Scale aria-hidden="true" className="h-5 w-5 text-primary" />
               Intellectual Property
-            </CardTitle>
+            </h2>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <h4 className="font-semibold mb-2">Our Content</h4>
+              <h3 className="font-semibold mb-2">Our Content</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 All content on our Service, including courses, videos, text, graphics, logos, and 
                 software, is owned by Let&apos;s Learn or our content providers and is protected by 
@@ -159,14 +164,14 @@ export default function TermsPage() {
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">Your Content</h4>
+              <h3 className="font-semibold mb-2">Your Content</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 You retain ownership of any content you submit to our Service, but you grant us a 
                 license to use, modify, and distribute your content in connection with our Service.
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">License to Use</h4>
+              <h3 className="font-semibold mb-2">License to Use</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 We grant you a limited, non-exclusive, non-transferable license to access and use 
                 our Service for your personal, non-commercial use.
@@ -178,14 +183,14 @@ export default function TermsPage() {
         {/* Disclaimers */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+            <h2 className="text-lg font-semibold leading-tight tracking-tight flex items-center gap-2">
+              <AlertTriangle aria-hidden="true" className="h-5 w-5 text-warning" />
               Disclaimers and Limitations
-            </CardTitle>
+            </h2>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <h4 className="font-semibold mb-2">Service Availability</h4>
+              <h3 className="font-semibold mb-2">Service Availability</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 We strive to maintain continuous service availability but cannot guarantee 
                 uninterrupted access. We may suspend or terminate the Service for maintenance, 
@@ -193,7 +198,7 @@ export default function TermsPage() {
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">Content Accuracy</h4>
+              <h3 className="font-semibold mb-2">Content Accuracy</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 While we make efforts to ensure content accuracy, we cannot guarantee that all 
                 information is current, complete, or error-free. Course content is for educational 
@@ -201,7 +206,7 @@ export default function TermsPage() {
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">Limitation of Liability</h4>
+              <h3 className="font-semibold mb-2">Limitation of Liability</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 Our liability is limited to the maximum extent permitted by law. We are not liable 
                 for any indirect, incidental, special, or consequential damages arising from your 
@@ -214,7 +219,7 @@ export default function TermsPage() {
         {/* Termination */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Termination</CardTitle>
+            <h2 className="text-lg font-semibold leading-tight tracking-tight">Termination</h2>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground text-sm leading-relaxed mb-4">
@@ -232,7 +237,7 @@ export default function TermsPage() {
         {/* Changes to Terms */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Changes to Terms</CardTitle>
+            <h2 className="text-lg font-semibold leading-tight tracking-tight">Changes to Terms</h2>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground text-sm leading-relaxed">
@@ -247,7 +252,7 @@ export default function TermsPage() {
         {/* Contact Information */}
         <Card>
           <CardHeader>
-            <CardTitle>Contact Us</CardTitle>
+            <h2 className="text-lg font-semibold leading-tight tracking-tight">Contact Us</h2>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground text-sm leading-relaxed mb-4">
@@ -260,7 +265,7 @@ export default function TermsPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </main>
       <Footer />
     </div>
   );

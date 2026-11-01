@@ -1,26 +1,19 @@
+'use client';
+
 import { useState } from 'react';
+import { Video } from 'lucide-react';
 import {
   Table,
   TableBody,
+  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
 import { formatDate, truncateText } from '@/lib/utils';
 import { EditLessonModal } from '@/components/admin/EditLessonModal';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { RowActions, TableSurface } from './admin-ui';
 
 interface Course {
   id: number;
@@ -49,79 +42,64 @@ interface EditLessonData {
 interface LessonTableProps {
   lessons: Lesson[];
   courses: Course[];
-  onUpdate: (id: number, data: EditLessonData) => void;
-  onDelete: (id: number) => void;
+  onUpdate: (id: number, data: EditLessonData) => Promise<void>;
+  onDelete: (id: number) => Promise<void>;
 }
 
-export function LessonTable({
-  lessons,
-  courses,
-  onUpdate,
-  onDelete,
-}: LessonTableProps) {
+export function LessonTable({ lessons, courses, onUpdate, onDelete }: LessonTableProps) {
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
 
   return (
     <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>ID</TableHead>
-            <TableHead>Title</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Duration (min)</TableHead>
-            <TableHead>Course</TableHead>
-            <TableHead>Created At</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {lessons.map((lesson) => (
-            <TableRow key={lesson.id}>
-              <TableCell>{lesson.id}</TableCell>
-              <TableCell>{lesson.title}</TableCell>
-              <TableCell>{truncateText(lesson.description, 50)}</TableCell>
-              <TableCell>{lesson.duration}</TableCell>
-              <TableCell>{lesson.course?.title || 'Unknown'}</TableCell>
-              <TableCell>{formatDate(lesson.createdAt)}</TableCell>
-              <TableCell>
-                <div className='flex space-x-2'>
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    onClick={() => setEditingLesson(lesson)}
-                  >
-                    Edit
-                  </Button>
-
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant='destructive' size='sm'>
-                        Delete
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This action cannot be undone. This will permanently
-                          delete the lesson and remove it from the course.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => onDelete(lesson.id)}>
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </TableCell>
+      <TableSurface>
+        <Table>
+          <TableCaption className='sr-only'>Lessons ({lessons.length})</TableCaption>
+          <TableHeader className='bg-muted/40'>
+            <TableRow>
+              <TableHead>Lesson</TableHead>
+              <TableHead>Course</TableHead>
+              <TableHead className='text-right'>Duration</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead className='w-24 text-right'>
+                <span className='sr-only'>Actions</span>
+              </TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {lessons.map((lesson) => (
+              <TableRow key={lesson.id}>
+                <TableCell className='min-w-64 max-w-md whitespace-normal'>
+                  <p className='flex items-center gap-1.5 font-medium text-foreground'>
+                    {lesson.title}
+                    {lesson.videoUrl ? (
+                      <Video aria-label='Has video' className='size-3.5 shrink-0 text-muted-foreground' />
+                    ) : null}
+                  </p>
+                  {lesson.description ? (
+                    <p className='text-muted-foreground'>{truncateText(lesson.description, 80)}</p>
+                  ) : null}
+                </TableCell>
+                <TableCell>{lesson.course?.title || 'Unknown course'}</TableCell>
+                <TableCell className='whitespace-nowrap text-right tabular-nums'>
+                  {lesson.duration ? `${lesson.duration} min` : '—'}
+                </TableCell>
+                <TableCell className='whitespace-nowrap text-muted-foreground'>
+                  {formatDate(lesson.createdAt)}
+                </TableCell>
+                <TableCell>
+                  <RowActions
+                    itemType='lesson'
+                    itemLabel={lesson.title}
+                    onEdit={() => setEditingLesson(lesson)}
+                    onDelete={() => onDelete(lesson.id)}
+                    deleteDescription='This permanently removes the lesson from its course, along with learner progress for it.'
+                  />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableSurface>
 
       {editingLesson && (
         <EditLessonModal
@@ -129,8 +107,8 @@ export function LessonTable({
           courses={courses}
           isOpen={!!editingLesson}
           onClose={() => setEditingLesson(null)}
-          onSubmit={(data) => {
-            onUpdate(editingLesson.id, data);
+          onSubmit={async (data) => {
+            await onUpdate(editingLesson.id, data);
             setEditingLesson(null);
           }}
         />

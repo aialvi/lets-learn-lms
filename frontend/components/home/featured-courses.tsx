@@ -1,114 +1,82 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BookOpen, User, Users } from "lucide-react";
+import { ArrowRight, BookOpen } from "lucide-react";
 import { fetchCourses } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { CourseCover } from "@/components/courses/course-cover";
-import { truncateText } from "@/lib/utils";
-
-interface Course {
-  imageUrl?: string | null;
-  id: string;
-  title: string;
-  description: string;
-  author: {
-    username: string;
-  };
-  _count: {
-    lessons: number;
-    enrollments: number;
-  };
-}
+import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorState } from "@/components/ui/error-state";
+import { LoadingRegion } from "@/components/ui/skeleton";
+import { CourseCard, CourseCardSkeleton, type CourseSummary } from "@/components/courses/course-card";
 
 export function FeaturedCourses() {
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courses, setCourses] = useState<CourseSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
-    const loadCourses = async () => {
-      try {
-        const data = await fetchCourses();
-        setCourses(data.slice(0, 3));
-      } catch (error) {
-        console.error("Error loading courses:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadCourses();
+  const loadCourses = useCallback(async () => {
+    setIsLoading(true);
+    setError(false);
+    try {
+      const data: CourseSummary[] = await fetchCourses();
+      setCourses(data.slice(0, 3));
+    } catch (err) {
+      console.error("Error loading courses:", err);
+      setError(true);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
+  useEffect(() => {
+    loadCourses();
+  }, [loadCourses]);
+
   return (
-    <section className="border-b bg-card py-20">
+    <section aria-labelledby="featured-heading" className="border-b bg-card py-16 md:py-24">
       <div className="container-page">
         <div className="mb-10 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div className="space-y-3">
-            <span className="eyebrow">Featured courses</span>
-            <h2 className="max-w-2xl text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-              Start with courses built around real outcomes.
+            <p className="eyebrow">Featured courses</p>
+            <h2 id="featured-heading" className="max-w-2xl text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+              Start with courses built around real outcomes
             </h2>
           </div>
-          <Button asChild variant="outline" className="w-fit font-semibold">
+          <Button asChild variant="outline" className="w-fit">
             <Link href="/courses">
               View catalog
-              <ArrowRight className="size-4" />
+              <ArrowRight aria-hidden="true" />
             </Link>
           </Button>
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <LoadingRegion label="Loading featured courses" className="grid grid-cols-1 gap-5 md:grid-cols-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-72 animate-pulse rounded-lg border bg-background p-5">
-                <div className="mb-8 h-9 w-9 rounded-md bg-muted" />
-                <div className="mb-3 h-5 w-4/5 rounded bg-muted" />
-                <div className="h-16 rounded bg-muted" />
-              </div>
+              <CourseCardSkeleton key={i} />
             ))}
-          </div>
+          </LoadingRegion>
+        ) : error ? (
+          <ErrorState
+            title="Couldn't load featured courses"
+            message="We'll keep trying in the background. You can still browse the full catalog."
+            onRetry={loadCourses}
+          />
         ) : courses.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-5 md:grid-cols-3">
             {courses.map((course) => (
-              <Link key={course.id} href={`/courses/${course.id}`} className="group">
-                <article className="flex h-full min-h-72 flex-col rounded-lg border bg-background p-5 transition-colors hover:border-primary/45">
-                  <CourseCover src={course.imageUrl} title={course.title} className="-mx-5 -mt-5 mb-5 aspect-video rounded-t-lg" />
-                  <div className="mb-6 flex items-center justify-between">
-                    <span className="flex size-10 items-center justify-center rounded-md border bg-card text-primary">
-                      <BookOpen className="size-5" />
-                    </span>
-                    <span className="rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                      {course._count.lessons} lessons
-                    </span>
-                  </div>
-                  <div className="flex-1 space-y-3">
-                    <h3 className="text-xl font-semibold leading-7 text-foreground group-hover:text-primary">
-                      {course.title}
-                    </h3>
-                    <p className="text-sm leading-6 text-muted-foreground">
-                      {truncateText(course.description || "No description available", 130)}
-                    </p>
-                  </div>
-                  <div className="mt-8 flex items-center justify-between border-t pt-4 text-xs text-muted-foreground">
-                    <span className="inline-flex items-center gap-1.5">
-                      <User className="size-3.5" />
-                      {course.author.username}
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <Users className="size-3.5" />
-                      {course._count.enrollments}
-                    </span>
-                  </div>
-                </article>
-              </Link>
+              <li key={course.id}>
+                <CourseCard course={course} headingLevel="h3" />
+              </li>
             ))}
-          </div>
+          </ul>
         ) : (
-          <div className="rounded-lg border bg-background p-10 text-center text-sm text-muted-foreground">
-            No courses available at the moment.
-          </div>
+          <EmptyState
+            icon={BookOpen}
+            title="No courses yet"
+            description="Courses will show up here once instructors publish them."
+          />
         )}
       </div>
     </section>

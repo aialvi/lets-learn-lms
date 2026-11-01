@@ -4,17 +4,23 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
+import { ErrorState } from '@/components/ui/error-state';
+import { LoadingRegion, Skeleton } from '@/components/ui/skeleton';
 import {
-  CheckCircle,
-  PlayCircle,
-  Lock,
   ArrowLeft,
-  Download,
+  Award,
+  CheckCircle2,
+  Circle,
   Clock,
+  FileQuestion,
+  PlayCircle,
+  VideoOff,
 } from 'lucide-react';
 import {
   fetchCourseById,
@@ -38,10 +44,12 @@ export default function VideoPlayer({ courseId, lessonId }: VideoPlayerProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [overallProgress, setOverallProgress] = useState(0);
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   const loadCourseData = useCallback(async () => {
     try {
       setIsLoading(true);
+      setLoadError(false);
 
       // Check enrollment status
       const enrollmentStatus = await checkEnrollmentStatus(
@@ -92,7 +100,7 @@ export default function VideoPlayer({ courseId, lessonId }: VideoPlayerProps) {
       setCurrentLesson(current || null);
     } catch (error) {
       console.error('Error loading course data:', error);
-      toast.error('Failed to load course data');
+      setLoadError(true);
     } finally {
       setIsLoading(false);
     }
@@ -130,215 +138,221 @@ export default function VideoPlayer({ courseId, lessonId }: VideoPlayerProps) {
         session.user.accessToken
       );
 
-      toast.success('Lesson marked as completed!');
-
-      // Reload data to update progress
-      await loadCourseData();
+      // Update progress locally so the page doesn't flash back to a skeleton.
+      setCurrentLesson((lesson) => (lesson ? { ...lesson, completed: true } : lesson));
+      const refreshed = await getCourseVideosProgress(courseId, session.user.accessToken).catch(() => null);
+      setCourse((prev) =>
+        prev
+          ? {
+              ...prev,
+              lessons: prev.lessons.map((l) => (l.id === currentLesson.id ? { ...l, completed: true } : l)),
+            }
+          : prev
+      );
+      if (refreshed) setOverallProgress(refreshed.overallProgress);
+      toast.success('Lesson marked as complete.');
     } catch (error) {
       console.error('Error marking lesson as completed:', error);
-      toast.error('Failed to mark lesson as completed');
+      toast.error("We couldn't save your progress. Please try again.");
     } finally {
       setIsMarkingComplete(false);
     }
   };
 
-  const navigateToLesson = (lesson: Lesson) => {
-    router.push(`/courses/${courseId}/lessons/${lesson.id}`);
-  };
-
   if (isLoading) {
     return (
-      <div className='flex items-center justify-center min-h-screen'>
-        <div className='text-center'>
-          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4'></div>
-          <p>Loading course...</p>
+      <LoadingRegion label='Loading lesson' className='grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]'>
+        <div className='space-y-5'>
+          <Skeleton className='h-8 w-32' />
+          <Skeleton className='h-9 w-2/3' />
+          <Skeleton className='aspect-video w-full rounded-xl' />
+          <Skeleton className='h-4 w-full' />
+          <Skeleton className='h-4 w-4/5' />
         </div>
-      </div>
+        <div className='surface space-y-3 p-5'>
+          <Skeleton className='h-5 w-32' />
+          <Skeleton className='h-2 w-full' />
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className='h-12 w-full' />
+          ))}
+        </div>
+      </LoadingRegion>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <ErrorState
+        title="Couldn't load this lesson"
+        message='We had trouble loading the course and your progress. Check your connection and try again.'
+        onRetry={loadCourseData}
+        action={
+          <Button variant='ghost' asChild>
+            <Link href={`/courses/${courseId}`}>Back to course</Link>
+          </Button>
+        }
+      />
     );
   }
 
   if (!course || !currentLesson) {
     return (
-      <div className='flex items-center justify-center min-h-screen'>
-        <div className='text-center'>
-          <h2 className='text-2xl font-bold mb-4'>Lesson not found</h2>
-          <Button onClick={() => router.push(`/courses/${courseId}`)}>
-            Back to Course
+      <EmptyState
+        icon={FileQuestion}
+        title='Lesson not found'
+        description='This lesson may have been removed or moved to another course.'
+        action={
+          <Button asChild>
+            <Link href={`/courses/${courseId}`}>Back to course</Link>
           </Button>
-        </div>
-      </div>
+        }
+      />
     );
   }
 
   const youtubeId = currentLesson.videoUrl ? extractYouTubeId(currentLesson.videoUrl) : null;
   const completedLessons = course.lessons.filter((l) => l.completed).length;
   const totalLessons = course.lessons.length;
+  const currentIndex = course.lessons.findIndex((l) => l.id === currentLesson.id);
+  const nextLesson = currentIndex >= 0 ? course.lessons[currentIndex + 1] : undefined;
+  const allComplete = totalLessons > 0 && completedLessons === totalLessons;
 
   return (
-    <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
-      {/* Main Video Player */}
-      <div className='lg:col-span-2'>
-        <Card>
-          <CardHeader>
-            <div className='flex items-center justify-between'>
-              <Button
-                variant='ghost'
-                onClick={() => router.push(`/courses/${courseId}`)}
-                className='mb-4'
-              >
-                <ArrowLeft className='h-4 w-4 mr-2' />
-                Back to Course
-              </Button>
+    <div className='grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]'>
+      <article className='min-w-0'>
+        <Button variant='ghost' size='sm' asChild className='-ml-2 mb-4 text-muted-foreground'>
+          <Link href={`/courses/${courseId}`}>
+            <ArrowLeft aria-hidden='true' />
+            {course.title}
+          </Link>
+        </Button>
 
-              {currentLesson.completed && (
-                <Badge variant='secondary' className='mb-4'>
-                  <CheckCircle className='h-4 w-4 mr-1' />
-                  Completed
-                </Badge>
-              )}
+        <div className='mb-6 flex flex-wrap items-start justify-between gap-3'>
+          <div className='min-w-0'>
+            <p className='eyebrow'>
+              Lesson {currentIndex + 1} of {totalLessons}
+            </p>
+            <h1 className='mt-2 text-2xl font-semibold tracking-tight text-foreground md:text-3xl'>
+              {currentLesson.title}
+            </h1>
+          </div>
+          {currentLesson.completed ? (
+            <Badge variant='success' className='mt-1'>
+              <CheckCircle2 aria-hidden='true' />
+              Completed
+            </Badge>
+          ) : null}
+        </div>
+
+        {youtubeId ? (
+          <div className='relative mb-8 aspect-video w-full overflow-hidden rounded-xl border bg-black'>
+            <iframe
+              className='absolute inset-0 h-full w-full'
+              src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&origin=${window.location.origin}`}
+              title={`Video: ${currentLesson.title}`}
+              allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
+              allowFullScreen
+            />
+          </div>
+        ) : (
+          <EmptyState
+            icon={VideoOff}
+            title='No video for this lesson'
+            description='This lesson is reading-only. Work through the notes below, then mark it complete.'
+            className='mb-8 bg-muted/40'
+          />
+        )}
+
+        {currentLesson.content ? (
+          <section className='mb-8'>
+            <h2 className='text-lg font-semibold text-foreground'>About this lesson</h2>
+            <p className='mt-3 max-w-prose whitespace-pre-line leading-7 text-muted-foreground'>
+              {currentLesson.content}
+            </p>
+          </section>
+        ) : null}
+
+        <div className='flex flex-col gap-3 border-t pt-6 sm:flex-row'>
+          {!currentLesson.completed ? (
+            <Button onClick={markAsCompleted} disabled={isMarkingComplete} aria-busy={isMarkingComplete} size='lg'>
+              {isMarkingComplete ? <Spinner /> : <CheckCircle2 aria-hidden='true' />}
+              {isMarkingComplete ? 'Saving…' : 'Mark as complete'}
+            </Button>
+          ) : null}
+          {nextLesson ? (
+            <Button variant={currentLesson.completed ? 'default' : 'outline'} size='lg' asChild>
+              <Link href={`/courses/${courseId}/lessons/${nextLesson.id}`}>
+                Next lesson
+                <PlayCircle aria-hidden='true' />
+              </Link>
+            </Button>
+          ) : null}
+          {allComplete ? (
+            <Button variant='outline' size='lg' asChild>
+              <Link href={`/courses/${courseId}/certificate`}>
+                <Award aria-hidden='true' />
+                Get certificate
+              </Link>
+            </Button>
+          ) : null}
+        </div>
+      </article>
+
+      <aside aria-labelledby='lesson-list-heading' className='lg:sticky lg:top-24 lg:self-start'>
+        <div className='surface overflow-hidden'>
+          <div className='space-y-3 border-b p-5'>
+            <h2 id='lesson-list-heading' className='font-semibold text-foreground'>
+              Course progress
+            </h2>
+            <div className='flex justify-between text-sm text-muted-foreground'>
+              <span>{Math.round(overallProgress)}% complete</span>
+              <span className='tabular-nums'>
+                {completedLessons}/{totalLessons} lessons
+              </span>
             </div>
+            <Progress value={overallProgress} aria-label='Course progress' />
+          </div>
 
-            <CardTitle className='text-2xl'>{currentLesson.title}</CardTitle>
-
-            <div className='flex items-center gap-4 text-sm text-muted-foreground'>
-              <span>Lesson {currentLesson.order}</span>
-              <span>•</span>
-              <span>{course.title}</span>
-            </div>
-          </CardHeader>
-
-          <CardContent>
-            {/* YouTube Video Player */}
-            {youtubeId ? (
-              <div className='relative w-full pb-[56.25%] mb-6'>
-                <iframe
-                  className='absolute top-0 left-0 w-full h-full rounded-lg'
-                  src={`https://www.youtube.com/embed/${youtubeId}?enablejsapi=1&origin=${window.location.origin}`}
-                  title={currentLesson.title}
-                  frameBorder='0'
-                  allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
-                  allowFullScreen
-                ></iframe>
-              </div>
-            ) : (
-              <div className='bg-gray-100 rounded-lg p-8 text-center mb-6'>
-                <PlayCircle className='h-16 w-16 mx-auto mb-4 text-gray-400' />
-                <p className='text-gray-600'>Video not available</p>
-              </div>
-            )}
-
-            {/* Lesson Content */}
-            {currentLesson.content && (
-              <div className='mb-6'>
-                <h3 className='text-lg font-semibold mb-3'>
-                  About this lesson
-                </h3>
-                <div className='prose max-w-none'>
-                  <p className='text-muted-foreground'>
-                    {currentLesson.content}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className='flex gap-3'>
-              {!currentLesson.completed && (
-                <Button
-                  onClick={markAsCompleted}
-                  disabled={isMarkingComplete}
-                  className='flex-1'
-                >
-                  {isMarkingComplete ? (
-                    <>
-                      <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2'></div>
-                      Marking Complete...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className='h-4 w-4 mr-2' />
-                      Mark as Complete
-                    </>
-                  )}
-                </Button>
-              )}
-
-              {completedLessons === totalLessons && (
-                <Button
-                  variant='outline'
-                  onClick={() =>
-                    router.push(`/courses/${courseId}/certificate`)
-                  }
-                  className='flex-1 cursor-pointer'
-                >
-                  <Download className='h-4 w-4 mr-2' />
-                  Get Certificate
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Playlist Sidebar */}
-      <div className='lg:col-span-1'>
-        <Card>
-          <CardHeader>
-            <CardTitle>Course Progress</CardTitle>
-            <div className='space-y-2'>
-              <div className='flex justify-between text-sm'>
-                <span>Progress</span>
-                <span>
-                  {completedLessons}/{totalLessons} lessons
-                </span>
-              </div>
-              <Progress value={overallProgress} className='w-full' />
-            </div>
-          </CardHeader>
-
-          <CardContent>
-            <div className='space-y-3'>
-              {course.lessons.map((lesson) => (
-                <div
-                  key={lesson.id}
-                  className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                    lesson.id === currentLesson.id
-                      ? 'bg-primary/5 border-primary'
-                      : 'hover:bg-gray-50'
-                  }`}
-                  onClick={() => navigateToLesson(lesson)}
-                >
-                  <div className='flex-shrink-0'>
+          <ol className='max-h-[60vh] space-y-1 overflow-y-auto p-2'>
+            {course.lessons.map((lesson, index) => {
+              const isCurrent = lesson.id === currentLesson.id;
+              return (
+                <li key={lesson.id}>
+                  <Link
+                    href={`/courses/${courseId}/lessons/${lesson.id}`}
+                    aria-current={isCurrent ? 'page' : undefined}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors ${
+                      isCurrent ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'
+                    }`}
+                  >
                     {lesson.completed ? (
-                      <CheckCircle className='h-5 w-5 text-green-600' />
-                    ) : lesson.videoUrl ? (
-                      <PlayCircle className='h-5 w-5 text-primary' />
+                      <CheckCircle2 aria-hidden='true' className='size-5 shrink-0 text-success' />
+                    ) : isCurrent ? (
+                      <PlayCircle aria-hidden='true' className='size-5 shrink-0 text-primary' />
                     ) : (
-                      <Lock className='h-5 w-5 text-gray-400' />
+                      <Circle aria-hidden='true' className='size-5 shrink-0 text-muted-foreground' />
                     )}
-                  </div>
-
-                  <div className='flex-1 min-w-0'>
-                    <p className='font-medium text-sm truncate'>
-                      {lesson.title}
-                    </p>
-                    <p className='text-xs text-muted-foreground'>
-                      Lesson {lesson.order}
-                    </p>
-                  </div>
-
-                  {lesson.watchTime && lesson.watchTime > 0 && (
-                    <div className='flex items-center text-xs text-muted-foreground'>
-                      <Clock className='h-3 w-3 mr-1' />
-                      {Math.floor(lesson.watchTime / 60)}m
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                    <span className='min-w-0 flex-1'>
+                      <span className='block truncate text-sm font-medium'>{lesson.title}</span>
+                      <span className='text-xs text-muted-foreground'>
+                        Lesson {index + 1}
+                        {lesson.completed ? <span className='sr-only'>, completed</span> : null}
+                      </span>
+                    </span>
+                    {lesson.watchTime ? (
+                      <span className='flex items-center gap-1 text-xs text-muted-foreground'>
+                        <Clock aria-hidden='true' className='size-3' />
+                        {Math.floor(lesson.watchTime / 60)}m
+                        <span className='sr-only'> watched</span>
+                      </span>
+                    ) : null}
+                  </Link>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      </aside>
     </div>
   );
 }

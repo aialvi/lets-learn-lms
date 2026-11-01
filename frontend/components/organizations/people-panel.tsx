@@ -1,22 +1,437 @@
 'use client';
+
 import { useState } from 'react';
+import { Check, Copy, UserPlus, Users } from 'lucide-react';
+import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { control, Department, Member, panel, Team } from '@/lib/organizations';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Spinner } from '@/components/ui/spinner';
+import { FormAlert } from '@/components/ui/form-alert';
+import { ConfirmAction } from '@/components/organizations/confirm-action';
+import { check, control, Department, fieldLabel, Member, panel, Team } from '@/lib/organizations';
+
 type Action = (path: string, body: unknown, method?: string) => Promise<unknown>;
-export function PeoplePanel({ members, teams, departments, admin, teamsEnabled, act }: { members: Member[]; teams: Team[]; departments: Department[]; admin: boolean; teamsEnabled: boolean; act: Action }) {
-  const [error, setError] = useState(''); const [busy, setBusy] = useState(false); const [inviteUrl, setInviteUrl] = useState(''); const [editingTeam, setEditingTeam] = useState<Team | null>(null);
-  const run = async (fn: () => Promise<unknown>) => { setBusy(true); setError(''); try { await fn(); } catch (e) { setError((e as Error).message); } finally { setBusy(false); } };
-  return <div className="space-y-6">{error && <p role="alert" className="text-destructive">{error}</p>}
-    {admin && <form className={panel} onSubmit={event => { event.preventDefault(); const form = event.currentTarget; const data = Object.fromEntries(new FormData(form)); void run(async () => { const result = await act('/invitations', data) as { invitationUrl: string }; setInviteUrl(result.invitationUrl); form.reset(); }); }}><h2 className="text-lg font-semibold">Invite a member</h2><div className="grid gap-3 md:grid-cols-3"><label>Email<input className={control} name="email" type="email" required /></label><label>Organization role<select className={control} name="role" defaultValue="learner">{['learner', 'manager', 'instructor', 'admin'].map(role => <option key={role}>{role}</option>)}</select></label><Button className="self-end" disabled={busy}>Create invitation</Button></div>{inviteUrl && <label className="block text-sm">Invitation link (valid for seven days)<input className={control} readOnly value={inviteUrl} onFocus={e => e.target.select()} /></label>}</form>}
-    <section className={panel}><h2 className="text-lg font-semibold">Members</h2><div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead><tr className="border-b"><th className="p-3">Name</th><th className="p-3">Role</th>{teamsEnabled && <th className="p-3">Department</th>}<th className="p-3">Status</th></tr></thead><tbody>{members.map(member => <tr key={member.id} className="border-b last:border-0"><td className="p-3"><p className="font-medium">{member.user.username}</p><p className="text-muted-foreground">{member.user.email}</p></td><td className="p-3">{admin ? <select aria-label={`Role for ${member.user.username}`} className={control} disabled={busy} value={member.role} onChange={e => void run(() => act(`/members/${member.id}`, { role: e.target.value }, 'PATCH'))}>{['learner', 'manager', 'instructor', 'admin'].map(role => <option key={role}>{role}</option>)}</select> : member.role}</td>
-      {teamsEnabled && <td className="p-3">{admin ? <select className={control} aria-label={`Department for ${member.user.username}`} disabled={busy} value={member.departmentId || ''} onChange={e => void run(() => act(`/members/${member.id}`, { departmentId: e.target.value || null }, 'PATCH'))}><option value="">Unassigned</option>{departments.map(department => <option key={department.id} value={department.id}>{department.name}</option>)}</select> : departments.find(d => d.id === member.departmentId)?.name || '—'}</td>}
-      <td className="p-3">{admin ? <Button variant="outline" disabled={busy} onClick={() => void run(() => act(`/members/${member.id}`, { active: !member.active }, 'PATCH'))}>{member.active ? 'Deactivate' : 'Reactivate'}</Button> : member.active ? 'Active' : 'Inactive'}</td></tr>)}</tbody></table></div></section>
-    {teamsEnabled && <><section className={panel}><h2 className="text-lg font-semibold">Teams</h2>{teams.map(team => <div className="flex justify-between items-center border-b py-3 last:border-0" key={team.id}><div><p className="font-medium">{team.name}</p><p className="text-sm text-muted-foreground">{team.members.length} members · {departments.find(d => d.id === team.departmentId)?.name || 'No department'}</p></div>{admin && <Button variant="outline" onClick={() => setEditingTeam(team)}>Edit team</Button>}</div>)}{!teams.length && <p className="text-muted-foreground">No teams yet.</p>}</section>
-      {admin && <div className="grid gap-5 lg:grid-cols-2"><form className={panel} onSubmit={event => { event.preventDefault(); const form = event.currentTarget; void run(async () => { await act('/departments', Object.fromEntries(new FormData(form))); form.reset(); }); }}><h2 className="text-lg font-semibold">Add department</h2><label className="block">Department name<input className={control} name="name" required /></label><Button disabled={busy}>Add department</Button></form>
-      <form key={editingTeam?.id || 'new'} className={panel} onSubmit={event => { event.preventDefault(); const form = event.currentTarget; const data = new FormData(form); const selected = data.getAll('members').map(String); const managers = data.getAll('managers').map(String); void run(async () => { await act(editingTeam ? `/teams/${editingTeam.id}` : '/teams', { name: data.get('name'), departmentId: data.get('departmentId') || undefined, members: [...new Set([...selected, ...managers])].map(membershipId => ({ membershipId, isManager: managers.includes(membershipId) })) }, editingTeam ? 'PATCH' : 'POST'); setEditingTeam(null); form.reset(); }); }}>
-        <h2 className="text-lg font-semibold">{editingTeam ? 'Edit team' : 'Create team'}</h2><label className="block">Team name<input className={control} name="name" required defaultValue={editingTeam?.name} /></label><label className="block">Department<select className={control} name="departmentId" defaultValue={editingTeam?.departmentId || ''}><option value="">No department</option>{departments.map(department => <option key={department.id} value={department.id}>{department.name}</option>)}</select></label>
-        <fieldset className="space-y-2"><legend className="mb-2 font-medium">Members and managers</legend>{members.filter(m => m.active).map(member => <div className="flex flex-wrap items-center justify-between gap-2" key={member.id}><label className="flex items-center gap-2"><input type="checkbox" name="members" value={member.id} defaultChecked={editingTeam?.members.some(m => m.membershipId === member.id)} />{member.user.username}</label>{['manager', 'admin'].includes(member.role) && <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="managers" value={member.id} defaultChecked={editingTeam?.members.some(m => m.membershipId === member.id && m.isManager)} />Manages this team</label>}</div>)}</fieldset><div className="flex gap-3"><Button disabled={busy}>Save team</Button>{editingTeam && <Button type="button" variant="outline" onClick={() => setEditingTeam(null)}>Cancel</Button>}</div>
-      </form></div>}
-    </>}
-  </div>;
+
+const roles = ['learner', 'manager', 'instructor', 'admin'];
+
+export function PeoplePanel({
+  members,
+  teams,
+  departments,
+  admin,
+  teamsEnabled,
+  act,
+}: {
+  members: Member[];
+  teams: Team[];
+  departments: Department[];
+  admin: boolean;
+  teamsEnabled: boolean;
+  act: Action;
+}) {
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [inviteUrl, setInviteUrl] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [editingTeam, setEditingTeam] = useState<Team | null>(null);
+
+  const run = async (fn: () => Promise<unknown>) => {
+    setBusy(true);
+    setError('');
+    try {
+      await fn();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const copyInvite = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      setCopied(true);
+      toast.success('Invitation link copied');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Couldn't copy automatically — select the link and copy it manually.");
+    }
+  };
+
+  return (
+    <div className='space-y-6'>
+      <FormAlert message={error || null} />
+
+      {admin && (
+        <form
+          className={panel}
+          aria-labelledby='invite-heading'
+          onSubmit={(event) => {
+            event.preventDefault();
+            const form = event.currentTarget;
+            const data = Object.fromEntries(new FormData(form));
+            void run(async () => {
+              const result = (await act('/invitations', data)) as { invitationUrl: string };
+              setInviteUrl(result.invitationUrl);
+              setCopied(false);
+              form.reset();
+            });
+          }}
+        >
+          <div className='space-y-1'>
+            <h2 id='invite-heading' className='text-lg font-semibold'>
+              Invite a member
+            </h2>
+            <p className='text-sm text-muted-foreground'>
+              We&apos;ll create a link you can share. It&apos;s valid for seven days.
+            </p>
+          </div>
+          <div className='grid gap-4 md:grid-cols-[1fr_12rem_auto] md:items-end'>
+            <label className={fieldLabel}>
+              Email
+              <input className={control} name='email' type='email' autoComplete='off' required />
+            </label>
+            <label className={fieldLabel}>
+              Organization role
+              <select className={`${control} capitalize`} name='role' defaultValue='learner'>
+                {roles.map((role) => (
+                  <option key={role} value={role}>
+                    {role}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Button disabled={busy} className='h-10'>
+              {busy ? <Spinner /> : <UserPlus aria-hidden='true' />}
+              Create invitation
+            </Button>
+          </div>
+          {inviteUrl && (
+            <div className='space-y-1.5 rounded-lg border bg-muted/40 p-4'>
+              <label htmlFor='invite-url' className='text-sm font-medium'>
+                Invitation link
+              </label>
+              <div className='flex gap-2'>
+                <input
+                  id='invite-url'
+                  className={`${control} mt-0 font-mono text-xs md:text-xs`}
+                  readOnly
+                  value={inviteUrl}
+                  onFocus={(e) => e.target.select()}
+                />
+                <Button type='button' variant='outline' className='h-10 shrink-0' onClick={() => void copyInvite()}>
+                  {copied ? <Check aria-hidden='true' /> : <Copy aria-hidden='true' />}
+                  {copied ? 'Copied' : 'Copy'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </form>
+      )}
+
+      <section className={panel} aria-labelledby='members-heading'>
+        <div className='flex items-center justify-between gap-3'>
+          <h2 id='members-heading' className='text-lg font-semibold'>
+            Members
+          </h2>
+          <span className='text-sm text-muted-foreground'>{members.length} total</span>
+        </div>
+        {members.length === 0 ? (
+          <EmptyState
+            size='sm'
+            icon={Users}
+            title='No members yet'
+            description={admin ? 'Invite people using the form above.' : 'Ask an administrator to invite members.'}
+          />
+        ) : (
+          <div className='-mx-5 overflow-x-auto sm:-mx-6'>
+            <table className='w-full text-left text-sm'>
+              <caption className='sr-only'>Organization members</caption>
+              <thead className='border-y bg-muted/40 text-muted-foreground'>
+                <tr>
+                  <th scope='col' className='px-4 py-2.5 pl-5 font-medium sm:pl-6'>
+                    Name
+                  </th>
+                  <th scope='col' className='px-4 py-2.5 font-medium'>
+                    Role
+                  </th>
+                  {teamsEnabled && (
+                    <th scope='col' className='px-4 py-2.5 font-medium'>
+                      Department
+                    </th>
+                  )}
+                  <th scope='col' className='px-4 py-2.5 font-medium'>
+                    Status
+                  </th>
+                  {admin && (
+                    <th scope='col' className='px-4 py-2.5 pr-5 text-right font-medium sm:pr-6'>
+                      <span className='sr-only'>Actions</span>
+                    </th>
+                  )}
+                </tr>
+              </thead>
+              <tbody className='divide-y'>
+                {members.map((member) => (
+                  <tr key={member.id}>
+                    <td className='px-4 py-3 pl-5 sm:pl-6'>
+                      <p className='font-medium'>{member.user.username}</p>
+                      <p className='text-muted-foreground'>{member.user.email}</p>
+                    </td>
+                    <td className='px-4 py-3'>
+                      {admin ? (
+                        <select
+                          aria-label={`Role for ${member.user.username}`}
+                          className={`${control} mt-0 min-w-32 capitalize`}
+                          disabled={busy}
+                          value={member.role}
+                          onChange={(e) => void run(() => act(`/members/${member.id}`, { role: e.target.value }, 'PATCH'))}
+                        >
+                          {roles.map((role) => (
+                            <option key={role} value={role}>
+                              {role}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className='capitalize'>{member.role}</span>
+                      )}
+                    </td>
+                    {teamsEnabled && (
+                      <td className='px-4 py-3'>
+                        {admin ? (
+                          <select
+                            className={`${control} mt-0 min-w-36`}
+                            aria-label={`Department for ${member.user.username}`}
+                            disabled={busy}
+                            value={member.departmentId || ''}
+                            onChange={(e) =>
+                              void run(() =>
+                                act(`/members/${member.id}`, { departmentId: e.target.value || null }, 'PATCH')
+                              )
+                            }
+                          >
+                            <option value=''>Unassigned</option>
+                            {departments.map((department) => (
+                              <option key={department.id} value={department.id}>
+                                {department.name}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          departments.find((d) => d.id === member.departmentId)?.name || '—'
+                        )}
+                      </td>
+                    )}
+                    <td className='px-4 py-3'>
+                      <Badge variant={member.active ? 'success' : 'secondary'}>
+                        {member.active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </td>
+                    {admin && (
+                      <td className='px-4 py-3 pr-5 text-right sm:pr-6'>
+                        {member.active ? (
+                          <ConfirmAction
+                            trigger='Deactivate'
+                            triggerLabel={`Deactivate ${member.user.username}`}
+                            title={`Deactivate ${member.user.username}?`}
+                            description="They'll lose access to this workspace until reactivated. Their training history is kept."
+                            confirmLabel='Deactivate'
+                            disabled={busy}
+                            onConfirm={() =>
+                              run(() => act(`/members/${member.id}`, { active: false }, 'PATCH'))
+                            }
+                          />
+                        ) : (
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            disabled={busy}
+                            aria-label={`Reactivate ${member.user.username}`}
+                            onClick={() => void run(() => act(`/members/${member.id}`, { active: true }, 'PATCH'))}
+                          >
+                            Reactivate
+                          </Button>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {teamsEnabled && (
+        <>
+          <section className={panel} aria-labelledby='teams-heading'>
+            <h2 id='teams-heading' className='text-lg font-semibold'>
+              Teams
+            </h2>
+            {teams.length === 0 ? (
+              <EmptyState
+                size='sm'
+                icon={Users}
+                title='No teams yet'
+                description={
+                  admin
+                    ? 'Create a team below to assign training to a group at once.'
+                    : 'An administrator can create teams.'
+                }
+              />
+            ) : (
+              <ul className='divide-y'>
+                {teams.map((team) => (
+                  <li className='flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0' key={team.id}>
+                    <div>
+                      <p className='font-medium'>{team.name}</p>
+                      <p className='text-sm text-muted-foreground'>
+                        {team.members.length} {team.members.length === 1 ? 'member' : 'members'} ·{' '}
+                        {departments.find((d) => d.id === team.departmentId)?.name || 'No department'}
+                      </p>
+                    </div>
+                    {admin && (
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={() => setEditingTeam(team)}
+                        aria-label={`Edit team ${team.name}`}
+                      >
+                        Edit
+                      </Button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {admin && (
+            <div className='grid gap-6 lg:grid-cols-2 lg:items-start'>
+              <form
+                className={panel}
+                aria-labelledby='department-heading'
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const form = event.currentTarget;
+                  void run(async () => {
+                    await act('/departments', Object.fromEntries(new FormData(form)));
+                    form.reset();
+                  });
+                }}
+              >
+                <h2 id='department-heading' className='text-lg font-semibold'>
+                  Add department
+                </h2>
+                <label className={fieldLabel}>
+                  Department name
+                  <input className={control} name='name' required />
+                </label>
+                <Button disabled={busy}>
+                  {busy ? <Spinner /> : null}
+                  Add department
+                </Button>
+              </form>
+
+              <form
+                key={editingTeam?.id || 'new'}
+                className={panel}
+                aria-labelledby='team-form-heading'
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const form = event.currentTarget;
+                  const data = new FormData(form);
+                  const selected = data.getAll('members').map(String);
+                  const managers = data.getAll('managers').map(String);
+                  void run(async () => {
+                    await act(
+                      editingTeam ? `/teams/${editingTeam.id}` : '/teams',
+                      {
+                        name: data.get('name'),
+                        departmentId: data.get('departmentId') || undefined,
+                        members: [...new Set([...selected, ...managers])].map((membershipId) => ({
+                          membershipId,
+                          isManager: managers.includes(membershipId),
+                        })),
+                      },
+                      editingTeam ? 'PATCH' : 'POST'
+                    );
+                    setEditingTeam(null);
+                    form.reset();
+                  });
+                }}
+              >
+                <h2 id='team-form-heading' className='text-lg font-semibold'>
+                  {editingTeam ? `Edit team: ${editingTeam.name}` : 'Create team'}
+                </h2>
+                <label className={fieldLabel}>
+                  Team name
+                  <input className={control} name='name' required defaultValue={editingTeam?.name} />
+                </label>
+                <label className={fieldLabel}>
+                  Department
+                  <select className={control} name='departmentId' defaultValue={editingTeam?.departmentId || ''}>
+                    <option value=''>No department</option>
+                    {departments.map((department) => (
+                      <option key={department.id} value={department.id}>
+                        {department.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <fieldset className='space-y-2'>
+                  <legend className='mb-2 text-sm font-medium'>Members and managers</legend>
+                  <ul className='divide-y rounded-lg border'>
+                    {members
+                      .filter((m) => m.active)
+                      .map((member) => (
+                        <li className='flex flex-wrap items-center justify-between gap-2 px-3 py-2.5' key={member.id}>
+                          <label className='flex items-center gap-2 text-sm'>
+                            <input
+                              className={check}
+                              type='checkbox'
+                              name='members'
+                              value={member.id}
+                              defaultChecked={editingTeam?.members.some((m) => m.membershipId === member.id)}
+                            />
+                            {member.user.username}
+                          </label>
+                          {['manager', 'admin'].includes(member.role) && (
+                            <label className='flex items-center gap-2 text-sm text-muted-foreground'>
+                              <input
+                                className={check}
+                                type='checkbox'
+                                name='managers'
+                                value={member.id}
+                                aria-label={`${member.user.username} manages this team`}
+                                defaultChecked={editingTeam?.members.some(
+                                  (m) => m.membershipId === member.id && m.isManager
+                                )}
+                              />
+                              Manages this team
+                            </label>
+                          )}
+                        </li>
+                      ))}
+                  </ul>
+                </fieldset>
+                <div className='flex flex-wrap gap-2'>
+                  <Button disabled={busy}>
+                    {busy ? <Spinner /> : null}
+                    Save team
+                  </Button>
+                  {editingTeam && (
+                    <Button type='button' variant='outline' onClick={() => setEditingTeam(null)}>
+                      Cancel
+                    </Button>
+                  )}
+                </div>
+              </form>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
 }

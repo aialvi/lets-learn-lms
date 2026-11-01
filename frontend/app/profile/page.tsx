@@ -1,18 +1,22 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { EmptyState } from '@/components/ui/empty-state';
+import { ErrorState } from '@/components/ui/error-state';
+import { LoadingRegion, Skeleton } from '@/components/ui/skeleton';
 import {
-  User,
   Mail,
   BookOpen,
   Edit3,
@@ -21,6 +25,8 @@ import {
   Trophy,
   Calendar,
   CheckCircle,
+  ShieldCheck,
+  type LucideIcon,
 } from 'lucide-react';
 import { MainNav } from '@/components/layout/main-nav';
 import { Footer } from '@/components/layout/footer';
@@ -65,6 +71,7 @@ export default function ProfilePage() {
     Record<string, VideoProgress[]>
   >({});
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     name: '',
@@ -86,50 +93,57 @@ export default function ProfilePage() {
     }
   }, [session]);
 
-  useEffect(() => {
-    const loadEnrollments = async () => {
-      if (session?.accessToken) {
+  const loadEnrollments = useCallback(async () => {
+    if (!session?.accessToken) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const data = await fetchEnrollments(session.accessToken);
+      setEnrollments(data);
+
+      // Fetch video progress for each enrolled course
+      const progressData: Record<string, VideoProgress[]> = {};
+      for (const enrollment of data) {
         try {
-          const data = await fetchEnrollments(session.accessToken);
-          setEnrollments(data);
-          
-          // Fetch video progress for each enrolled course
-          const progressData: Record<string, VideoProgress[]> = {};
-          for (const enrollment of data) {
-            try {
-              const progress = await getCourseVideosProgress(
-                enrollment.course.id,
-                session.accessToken
-              );
-              
-              // Handle different response formats
-              if (Array.isArray(progress)) {
-                progressData[enrollment.course.id] = progress;
-              } else if (progress && typeof progress === 'object') {
-                progressData[enrollment.course.id] = progress.data || progress.progress || [];
-              } else {
-                progressData[enrollment.course.id] = [];
-              }
-            } catch (error) {
-              console.error(`Error fetching progress for course ${enrollment.course.id}:`, error);
-              progressData[enrollment.course.id] = [];
-            }
+          const progress = await getCourseVideosProgress(
+            enrollment.course.id,
+            session.accessToken
+          );
+
+          // Handle different response formats
+          if (Array.isArray(progress)) {
+            progressData[enrollment.course.id] = progress;
+          } else if (progress && typeof progress === 'object') {
+            progressData[enrollment.course.id] = progress.data || progress.progress || [];
+          } else {
+            progressData[enrollment.course.id] = [];
           }
-          setVideoProgress(progressData);
         } catch (error) {
-          console.error('Error loading enrollments:', error);
-        } finally {
-          setLoading(false);
+          console.error(`Error fetching progress for course ${enrollment.course.id}:`, error);
+          progressData[enrollment.course.id] = [];
         }
       }
-    };
+      setVideoProgress(progressData);
+    } catch (error) {
+      console.error('Error loading enrollments:', error);
+      setLoadError('We couldn’t load your courses. Check your connection and try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [session?.accessToken]);
 
-    loadEnrollments();
-  }, [session]);
+  useEffect(() => {
+    if (status === 'authenticated') loadEnrollments();
+  }, [status, loadEnrollments]);
 
   const handleSave = async () => {
-    // In a real app, you'd make an API call to update the user profile
-    console.log('Saving profile:', editData);
+    // Profile updates aren't persisted by the API yet; be explicit with the user.
+    toast.info('Profile editing isn’t available yet', {
+      description: 'Your name and email can’t be changed from here right now.',
+    });
     setIsEditing(false);
   };
 
@@ -141,22 +155,30 @@ export default function ProfilePage() {
     setIsEditing(false);
   };
 
-  if (status === 'loading') {
+  if (status === 'loading' || !session) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="flex min-h-screen flex-col bg-background">
         <MainNav />
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center h-96">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-          </div>
-        </div>
+        <main id="main-content" className="flex-1">
+          <LoadingRegion label="Loading your profile" className="container-page max-w-4xl space-y-8 py-10 sm:py-12">
+            <div className="flex items-center gap-4">
+              <Skeleton className="size-16 rounded-full sm:size-20" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-64 max-w-full" />
+              </div>
+            </div>
+            <Skeleton className="h-10 w-full" />
+            <div className="grid gap-4 sm:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-28" />
+              ))}
+            </div>
+          </LoadingRegion>
+        </main>
         <Footer />
       </div>
     );
-  }
-
-  if (!session) {
-    return null;
   }
 
   const completedCourses = (enrollments || []).filter(e => e.progress >= 100).length;
@@ -172,295 +194,321 @@ export default function ProfilePage() {
     month: 'long',
   });
 
+  const initials = (session.user.name || session.user.email || 'U')
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+  const coursesEmpty = (
+    <EmptyState
+      size="sm"
+      icon={BookOpen}
+      title="No courses yet"
+      description="Enroll in a course and your progress will be tracked here."
+      action={
+        <Button asChild size="sm">
+          <Link href="/courses">Browse courses</Link>
+        </Button>
+      }
+    />
+  );
+
+  const listSkeleton = (
+    <LoadingRegion label="Loading your courses" className="space-y-3">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <Skeleton key={i} className="h-20 w-full" />
+      ))}
+    </LoadingRegion>
+  );
+
+  const loadErrorState = loadError ? (
+    <ErrorState title="Couldn’t load your courses" message={loadError} onRetry={loadEnrollments} />
+  ) : null;
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       <MainNav />
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center">
-              <User className="w-10 h-10 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">
-                {session.user.name || 'User'}
-              </h1>
-              <p className="text-muted-foreground flex items-center gap-2">
-                <Mail className="w-4 h-4" />
-                {session.user.email}
+      <main id="main-content" className="flex-1">
+        <div className="container-page max-w-4xl py-10 sm:py-12">
+          <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center">
+            <span
+              aria-hidden="true"
+              className="flex size-16 shrink-0 items-center justify-center rounded-full bg-accent text-xl font-semibold text-accent-foreground sm:size-20 sm:text-2xl"
+            >
+              {initials}
+            </span>
+            <div className="min-w-0 space-y-2">
+              <h1 className="page-title truncate">{session.user.name || 'Your profile'}</h1>
+              <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Mail aria-hidden="true" className="size-4 shrink-0" />
+                <span className="truncate">{session.user.email}</span>
               </p>
-              <div className="flex items-center gap-4 mt-2">
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  <Calendar className="w-3 h-3" />
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary">
+                  <Calendar aria-hidden="true" />
                   Member since {memberSince}
                 </Badge>
-                <Badge variant="outline" className="flex items-center gap-1">
-                  <Trophy className="w-3 h-3" />
+                <Badge variant="outline" className="capitalize">
+                  <ShieldCheck aria-hidden="true" />
                   {session.user.role}
                 </Badge>
               </div>
             </div>
-          </div>
-        </div>
+          </header>
 
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="courses">My Courses</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-          </TabsList>
+          <Tabs defaultValue="overview" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-3 sm:w-fit">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="courses">My courses</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <TabsContent value="overview" className="space-y-6">
+              <h2 className="sr-only">Overview</h2>
+              {loading ? (
+                <LoadingRegion label="Loading your stats" className="grid gap-4 sm:grid-cols-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-28" />
+                  ))}
+                </LoadingRegion>
+              ) : loadErrorState ? (
+                loadErrorState
+              ) : (
+                <>
+                  <dl className="grid gap-4 sm:grid-cols-3">
+                    <ProfileStat icon={BookOpen} label="Enrolled courses" value={(enrollments || []).length} hint="Active learning paths" />
+                    <ProfileStat icon={Trophy} label="Completed courses" value={completedCourses} hint="Certificates earned" />
+                    <ProfileStat icon={CheckCircle} label="Completed lessons" value={completedLessons} hint={`Out of ${totalLessons} total`} />
+                  </dl>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Recent courses</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {(enrollments || []).length > 0 ? (
+                        <ul className="divide-y">
+                          {(enrollments || []).slice(0, 3).map((enrollment) => (
+                            <li key={enrollment.id} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
+                              <div className="flex min-w-0 items-center gap-3">
+                                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+                                  <BookOpen aria-hidden="true" className="size-5" />
+                                </span>
+                                <div className="min-w-0">
+                                  <p className="truncate font-medium">{enrollment.course.title}</p>
+                                  <p className="truncate text-sm text-muted-foreground">
+                                    by {enrollment.course.author.firstName} {enrollment.course.author.lastName}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="shrink-0 text-right">
+                                <p className="text-sm font-medium tabular-nums">{enrollment.progress}% complete</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {enrollment.course.lessons?.length || 0} lessons
+                                </p>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        coursesEmpty
+                      )}
+                    </CardContent>
+                  </Card>
+                </>
+              )}
+            </TabsContent>
+
+            <TabsContent value="courses" className="space-y-6">
+              <h2 className="sr-only">My courses</h2>
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Enrolled Courses
-                  </CardTitle>
-                  <BookOpen className="h-4 w-4 text-muted-foreground" />
+                <CardHeader>
+                  <CardTitle>Enrolled courses</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{(enrollments || []).length}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Active learning paths
-                  </p>
+                  {loading ? (
+                    listSkeleton
+                  ) : loadErrorState ? (
+                    loadErrorState
+                  ) : (enrollments || []).length > 0 ? (
+                    <ul className="space-y-4">
+                      {(enrollments || []).map((enrollment) => {
+                        const done = enrollment.progress >= 100;
+                        return (
+                          <li key={enrollment.id} className="rounded-lg border p-4">
+                            <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                              <div className="min-w-0">
+                                <h4 className="text-base font-semibold">{enrollment.course.title}</h4>
+                                <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{enrollment.course.description}</p>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                  by {enrollment.course.author.firstName} {enrollment.course.author.lastName}
+                                </p>
+                              </div>
+                              <Badge variant={done ? 'success' : 'secondary'}>
+                                {done ? <CheckCircle aria-hidden="true" /> : null}
+                                {done ? 'Completed' : 'In progress'}
+                              </Badge>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <span id={`progress-${enrollment.id}`}>Progress</span>
+                                <span className="tabular-nums">{enrollment.progress}%</span>
+                              </div>
+                              <Progress
+                                value={enrollment.progress}
+                                role="progressbar"
+                                aria-valuemin={0}
+                                aria-valuemax={100}
+                                aria-valuenow={enrollment.progress}
+                                aria-labelledby={`progress-${enrollment.id}`}
+                              />
+                              <div className="mt-3 flex items-center justify-between">
+                                <span className="text-sm text-muted-foreground">
+                                  {enrollment.course.lessons?.length || 0} lessons
+                                </span>
+                                <Button asChild size="sm" variant={done ? 'outline' : 'default'}>
+                                  <Link href={`/courses/${enrollment.course.id}`}>
+                                    {done ? 'Review' : 'Continue'}
+                                    <span className="sr-only"> {enrollment.course.title}</span>
+                                  </Link>
+                                </Button>
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : (
+                    coursesEmpty
+                  )}
                 </CardContent>
               </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Completed Courses
-                  </CardTitle>
-                  <Trophy className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{completedCourses}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Certificates earned
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Completed Lessons
-                  </CardTitle>
-                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{completedLessons}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Out of {totalLessons} total
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+            </TabsContent>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {(enrollments || []).length > 0 ? (
-                  <div className="space-y-4">
-                    {(enrollments || []).slice(0, 3).map((enrollment) => (
-                      <div key={enrollment.id} className="flex items-center justify-between p-3 rounded-lg border">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                            <BookOpen className="w-5 h-5 text-primary" />
-                          </div>
-                          <div>
-                            <h4 className="font-medium">{enrollment.course.title}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              by {enrollment.course.author.firstName} {enrollment.course.author.lastName}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium">{enrollment.progress}% complete</p>
-                          <p className="text-xs text-muted-foreground">
-                            {enrollment.course.lessons?.length || 0} lessons
-                          </p>
-                        </div>
+            <TabsContent value="settings" className="space-y-6">
+              <h2 className="sr-only">Settings</h2>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
+                  <CardTitle>Account information</CardTitle>
+                  {!isEditing && (
+                    <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                      <Edit3 aria-hidden="true" />
+                      Edit
+                    </Button>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <form
+                    className="space-y-4"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      handleSave();
+                    }}
+                  >
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        {isEditing ? <Label htmlFor="name">Name</Label> : <p className="text-sm font-medium">Name</p>}
+                        {isEditing ? (
+                          <Input
+                            id="name"
+                            autoComplete="name"
+                            value={editData.name}
+                            onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                          />
+                        ) : (
+                          <p className="rounded-md bg-muted px-3 py-2 text-sm">{session.user.name || '—'}</p>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>No courses enrolled yet</p>
-                    <Button asChild className="mt-4">
-                      <Link href="/courses">Browse Courses</Link>
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="courses" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>My Enrolled Courses</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <div className="flex items-center justify-center h-32">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                  </div>
-                ) : (enrollments || []).length > 0 ? (
-                  <div className="space-y-4">
-                    {(enrollments || []).map((enrollment) => (
-                      <div key={enrollment.id} className="p-4 rounded-lg border">
-                        <div className="flex items-start justify-between mb-3">
-                          <div>
-                            <h3 className="font-semibold text-lg">{enrollment.course.title}</h3>
-                            <p className="text-muted-foreground">{enrollment.course.description}</p>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              by {enrollment.course.author.firstName} {enrollment.course.author.lastName}
-                            </p>
-                          </div>
-                          <Badge variant={enrollment.progress >= 100 ? 'default' : 'secondary'}>
-                            {enrollment.progress >= 100 ? 'Completed' : 'In Progress'}
-                          </Badge>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span>Progress</span>
-                            <span>{enrollment.progress}%</span>
-                          </div>
-                          <div className="w-full bg-muted rounded-full h-2">
-                            <div
-                              className="bg-primary h-2 rounded-full transition-all"
-                              style={{ width: `${enrollment.progress}%` }}
-                            />
-                          </div>
-                          <div className="flex justify-between items-center mt-3">
-                            <span className="text-sm text-muted-foreground">
-                              {enrollment.course.lessons?.length || 0} lessons
-                            </span>
-                            <Button asChild size="sm">
-                              <Link href={`/courses/${enrollment.course.id}`}>
-                                {enrollment.progress >= 100 ? 'Review' : 'Continue'}
-                              </Link>
-                            </Button>
-                          </div>
-                        </div>
+                      <div className="space-y-2">
+                        {isEditing ? <Label htmlFor="email">Email</Label> : <p className="text-sm font-medium">Email</p>}
+                        {isEditing ? (
+                          <Input
+                            id="email"
+                            type="email"
+                            autoComplete="email"
+                            value={editData.email}
+                            onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                          />
+                        ) : (
+                          <p className="break-all rounded-md bg-muted px-3 py-2 text-sm">{session.user.email}</p>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>No courses enrolled yet</p>
-                    <Button asChild className="mt-4">
-                      <Link href="/courses">Browse Courses</Link>
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="settings" className="space-y-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Account Information</CardTitle>
-                {!isEditing && (
-                  <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                    <Edit3 className="w-4 h-4 mr-2" />
-                    Edit
-                  </Button>
-                )}
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
-                    {isEditing ? (
-                      <Input
-                        id="name"
-                        value={editData.name}
-                        onChange={(e) => setEditData({ ...editData, name: e.target.value })}
-                      />
-                    ) : (
-                      <p className="text-sm p-2 bg-muted rounded-md">{session.user.name}</p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    {isEditing ? (
-                      <Input
-                        id="email"
-                        type="email"
-                        value={editData.email}
-                        onChange={(e) => setEditData({ ...editData, email: e.target.value })}
-                      />
-                    ) : (
-                      <p className="text-sm p-2 bg-muted rounded-md">{session.user.email}</p>
-                    )}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Role</Label>
-                  <p className="text-sm p-2 bg-muted rounded-md">{session.user.role}</p>
-                </div>
-                {/* <div className="space-y-2">
-                  <Label>User ID</Label>
-                  <p className="text-sm p-2 bg-muted rounded-md font-mono">{session.user.id}</p>
-                </div> */}
-                
-                {isEditing && (
-                  <div className="flex gap-2 pt-4">
-                    <Button onClick={handleSave} size="sm">
-                      <Save className="w-4 h-4 mr-2" />
-                      Save Changes
-                    </Button>
-                    <Button variant="outline" onClick={handleCancel} size="sm">
-                      <X className="w-4 h-4 mr-2" />
-                      Cancel
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Preferences</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Email Notifications</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Receive email updates about your courses
-                      </p>
                     </div>
-                    <Button variant="outline" size="sm">
-                      Configure
-                    </Button>
-                  </div>
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Role</p>
+                      <p className="rounded-md bg-muted px-3 py-2 text-sm capitalize">{session.user.role}</p>
+                    </div>
+
+                    {isEditing && (
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        <Button type="submit" size="sm">
+                          <Save aria-hidden="true" />
+                          Save changes
+                        </Button>
+                        <Button type="button" variant="outline" onClick={handleCancel} size="sm">
+                          <X aria-hidden="true" />
+                          Cancel
+                        </Button>
+                      </div>
+                    )}
+                  </form>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Preferences</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <PreferenceRow title="Email notifications" description="Receive email updates about your courses." />
                   <Separator />
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Privacy Settings</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Manage your data and privacy preferences
-                      </p>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      Manage
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+                  <PreferenceRow title="Privacy settings" description="Manage your data and privacy preferences." />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </main>
       <Footer />
+    </div>
+  );
+}
+
+function ProfileStat({
+  icon: Icon,
+  label,
+  value,
+  hint,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: React.ReactNode;
+  hint: string;
+}) {
+  return (
+    <div className="surface flex flex-col gap-3 p-5">
+      <dt className="flex items-center justify-between gap-2 text-sm font-medium text-muted-foreground">
+        {label}
+        <Icon aria-hidden="true" className="size-4" />
+      </dt>
+      <dd className="space-y-1">
+        <span className="block text-2xl font-semibold tracking-tight tabular-nums">{value}</span>
+        <span className="block text-xs text-muted-foreground">{hint}</span>
+      </dd>
+    </div>
+  );
+}
+
+function PreferenceRow({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h4 className="font-medium">{title}</h4>
+        <p className="text-sm text-muted-foreground">{description}</p>
+      </div>
+      <Badge variant="outline" className="text-muted-foreground">Coming soon</Badge>
     </div>
   );
 }
