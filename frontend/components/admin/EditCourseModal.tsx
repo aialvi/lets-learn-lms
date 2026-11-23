@@ -26,13 +26,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { SelectField } from '@/components/ui/select-field';
 import { Checkbox } from '@/components/ui/checkbox';
 
 interface Instructor {
@@ -70,16 +64,16 @@ const courseFormSchema = z.object({
   description: z.string().min(10, {
     message: 'Description must be at least 10 characters.',
   }),
-  price: z.coerce.number().min(0, {
+  price: z.coerce.number<number>().min(0, {
     message: 'Price must be a positive number.',
   }),
   instructorId: z.string({
-    required_error: "Please select an instructor",
+    error: "Please select an instructor",
   }),
   isPublished: z.boolean().default(false),
 });
 
-type CourseFormValues = z.infer<typeof courseFormSchema>;
+type CourseFormValues = z.output<typeof courseFormSchema>;
 
 export function EditCourseModal({
   course,
@@ -91,7 +85,7 @@ export function EditCourseModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const form = useForm<CourseFormValues>({
+  const form = useForm<z.input<typeof courseFormSchema>, unknown, CourseFormValues>({
     resolver: zodResolver(courseFormSchema),
     defaultValues: {
       imageUrl: course.imageUrl || '',
@@ -185,26 +179,17 @@ export function EditCourseModal({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Instructor</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value || ""}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select an instructor" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {instructors.map((instructor) => (
-                        <SelectItem
-                          key={instructor.id}
-                          value={String(instructor.id)}
-                        >
-                          {instructor.username}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <SelectField
+                      ref={field.ref}
+                      value={field.value || ''}
+                      onValueChange={field.onChange}
+                      onBlur={field.onBlur}
+                      placeholder='Select an instructor'
+                      emptyMessage='No instructors available'
+                      options={instructors.map((instructor) => ({ value: String(instructor.id), label: instructor.username }))}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

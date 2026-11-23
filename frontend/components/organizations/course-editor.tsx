@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SelectField } from '@/components/ui/select-field';
 import { Spinner } from '@/components/ui/spinner';
 import { FormAlert } from '@/components/ui/form-alert';
 import { check, control, Course, CourseLesson, fieldLabel, panel, Question } from '@/lib/organizations';
@@ -153,23 +154,21 @@ export function CourseEditor({
             <fieldset key={i} className='space-y-4 rounded-lg border p-4'>
               <legend className='px-1 text-sm font-medium'>Question {i + 1}</legend>
               <div className='grid gap-4 sm:grid-cols-[12rem_1fr]'>
-                <label className={fieldLabel}>
-                  Type
-                  <select
-                    className={control}
-                    value={row.type}
-                    onChange={(e) =>
-                      question(i, {
-                        type: e.target.value,
-                        options: e.target.value === 'boolean' ? ['True', 'False'] : ['', '', '', ''],
-                        correctIndex: 0,
-                      })
-                    }
-                  >
-                    <option value='choice'>Multiple choice</option>
-                    <option value='boolean'>True / false</option>
-                  </select>
-                </label>
+                <SelectField
+                  label='Type'
+                  value={row.type}
+                  onValueChange={(type) =>
+                    question(i, {
+                      type,
+                      options: type === 'boolean' ? ['True', 'False'] : ['', '', '', ''],
+                      correctIndex: 0,
+                    })
+                  }
+                  options={[
+                    { value: 'choice', label: 'Multiple choice' },
+                    { value: 'boolean', label: 'True / false' },
+                  ]}
+                />
                 <label className={fieldLabel}>
                   Question
                   <input className={control} value={row.prompt} required onChange={(e) => question(i, { prompt: e.target.value })} />
@@ -274,13 +273,15 @@ export function CourseEditor({
                   onChange={(e) => setMonths(e.target.value)}
                 />
               </label>
-              <label className={fieldLabel}>
-                Renewal requirements
-                <select className={control} value={renewal} onChange={(e) => setRenewal(e.target.value)}>
-                  <option value='full'>Repeat lessons and pass quiz</option>
-                  <option value='quiz'>Pass quiz only</option>
-                </select>
-              </label>
+              <SelectField
+                label='Renewal requirements'
+                value={renewal}
+                onValueChange={setRenewal}
+                options={[
+                  { value: 'full', label: 'Repeat lessons and pass quiz' },
+                  { value: 'quiz', label: 'Pass quiz only' },
+                ]}
+              />
               <p className='text-sm text-muted-foreground sm:col-span-2'>
                 Expiring certificates require a quiz. Renewal training opens 30 days before expiry.
               </p>

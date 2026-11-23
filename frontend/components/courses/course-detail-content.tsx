@@ -46,7 +46,6 @@ interface Course {
   };
   lessons: Lesson[];
   _count: {
-    lessons: number;
     enrollments: number;
   };
 }
@@ -107,7 +106,7 @@ export default function CourseDetailContent({ course }: { course: Course }) {
   };
 
   const firstLesson = lessons[0];
-  const totalMinutes = course._count.lessons * MINUTES_PER_LESSON;
+  const totalMinutes = lessons.length * MINUTES_PER_LESSON;
 
   return (
     <div className='container-page py-8 md:py-12'>
@@ -177,7 +176,7 @@ export default function CourseDetailContent({ course }: { course: Course }) {
               <div className='mb-4 flex flex-wrap items-baseline justify-between gap-2'>
                 <h2 className='text-lg font-semibold text-foreground'>Course content</h2>
                 <p className='text-sm text-muted-foreground'>
-                  {course._count.lessons} lessons · about {totalMinutes} minutes
+                  {lessons.length} lessons · about {totalMinutes} minutes
                 </p>
               </div>
 
@@ -247,7 +246,7 @@ export default function CourseDetailContent({ course }: { course: Course }) {
             <ul className='mt-6 space-y-3 text-sm text-foreground'>
               <li className='flex items-center gap-3'>
                 <BookOpen aria-hidden='true' className='size-4 text-muted-foreground' />
-                {course._count.lessons} lessons
+                {lessons.length} lessons
               </li>
               <li className='flex items-center gap-3'>
                 <Award aria-hidden='true' className='size-4 text-muted-foreground' />

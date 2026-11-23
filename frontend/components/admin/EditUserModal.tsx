@@ -14,8 +14,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Field, FormAlert } from './admin-ui';
+import { SelectField } from '@/components/ui/select-field';
+import { Field, FormAlert, userRoles } from './admin-ui';
 import { User, UpdateUserData } from '@/types';
 
 interface EditUserModalProps {
@@ -128,16 +128,13 @@ export function EditUserModal({ user, isOpen, onClose, onSubmit }: EditUserModal
           </Field>
           <Field id='edit-user-role' label='Role'>
             {(props) => (
-              <Select value={formData.role} onValueChange={(role) => setFormData((prev) => ({ ...prev, role }))}>
-                <SelectTrigger {...props} className='w-full'>
-                  <SelectValue placeholder='Select role' />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='user'>User</SelectItem>
-                  <SelectItem value='instructor'>Instructor</SelectItem>
-                  <SelectItem value='admin'>Admin</SelectItem>
-                </SelectContent>
-              </Select>
+              <SelectField
+                {...props}
+                value={formData.role}
+                onValueChange={(role) => setFormData((prev) => ({ ...prev, role }))}
+                placeholder='Select role'
+                options={userRoles}
+              />
             )}
           </Field>
           <div className='flex items-start gap-3 rounded-lg border p-4'>

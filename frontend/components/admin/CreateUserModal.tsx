@@ -12,8 +12,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Field, FormAlert } from './admin-ui';
+import { SelectField } from '@/components/ui/select-field';
+import { Field, FormAlert, userRoles } from './admin-ui';
 import { CreateUserData } from '@/types';
 
 interface CreateUserModalProps {
@@ -22,7 +22,7 @@ interface CreateUserModalProps {
   onSubmit: (data: CreateUserData) => Promise<void>;
 }
 
-const emptyForm = { username: '', email: '', password: '', role: 'user' };
+const emptyForm = { username: '', email: '', password: '', role: 'student' };
 
 export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalProps) {
   const [formData, setFormData] = useState(emptyForm);
@@ -107,16 +107,13 @@ export function CreateUserModal({ isOpen, onClose, onSubmit }: CreateUserModalPr
           </Field>
           <Field id='create-user-role' label='Role'>
             {(props) => (
-              <Select value={formData.role} onValueChange={(role) => setFormData((prev) => ({ ...prev, role }))}>
-                <SelectTrigger {...props} className='w-full'>
-                  <SelectValue placeholder='Select role' />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='user'>User</SelectItem>
-                  <SelectItem value='instructor'>Instructor</SelectItem>
-                  <SelectItem value='admin'>Admin</SelectItem>
-                </SelectContent>
-              </Select>
+              <SelectField
+                {...props}
+                value={formData.role}
+                onValueChange={(role) => setFormData((prev) => ({ ...prev, role }))}
+                placeholder='Select role'
+                options={userRoles}
+              />
             )}
           </Field>
 

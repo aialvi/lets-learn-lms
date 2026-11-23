@@ -22,13 +22,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { SelectField } from '@/components/ui/select-field';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -50,10 +44,10 @@ interface CreateLessonModalProps {
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
-  duration: z.coerce.number().min(1, 'Duration must be at least 1 minute'),
+  duration: z.coerce.number<number>().min(1, 'Duration must be at least 1 minute'),
   courseId: z.string().min(1, 'Course is required'),
   videoUrl: z.string().optional(),
-  order: z.coerce.number().min(1, 'Order must be at least 1'),
+  order: z.coerce.number<number>().min(1, 'Order must be at least 1'),
 });
 
 export default function CreateLessonModal({
@@ -62,7 +56,7 @@ export default function CreateLessonModal({
   onSubmit,
   courses,
 }: CreateLessonModalProps) {
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<z.input<typeof formSchema>, unknown, z.output<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '',
@@ -141,26 +135,17 @@ export default function CreateLessonModal({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Course</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger className='w-full'>
-                        <SelectValue placeholder='Select a course' />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {courses.map((course) => (
-                        <SelectItem
-                          key={course.id}
-                          value={course.id.toString()}
-                        >
-                          {course.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <SelectField
+                      ref={field.ref}
+                      value={field.value || ''}
+                      onValueChange={field.onChange}
+                      onBlur={field.onBlur}
+                      placeholder='Select a course'
+                      emptyMessage='Create a course first'
+                      options={courses.map((course) => ({ value: String(course.id), label: course.title }))}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge, type BadgeProps } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
+import { SelectField } from '@/components/ui/select-field';
 import { Spinner } from '@/components/ui/spinner';
 import { FormAlert } from '@/components/ui/form-alert';
 import {
@@ -15,6 +16,7 @@ import {
   fieldLabel,
   moduleNames,
   modules,
+  learningModes,
   Organization,
   panel,
 } from '@/lib/organizations';
@@ -78,21 +80,17 @@ export function SettingsPanel({
             <input className={control} name='timezone' required defaultValue={organization.timezone} />
           </label>
         </div>
-        <label className={`${fieldLabel} sm:max-w-xs`}>
-          Learning mode
-          <select
-            className={control}
-            value={mode}
-            aria-describedby='mode-hint'
-            onChange={(e) => {
-              setMode(e.target.value);
-              setEnabled(e.target.value === 'professional' ? [...modules] : ['certifications']);
-            }}
-          >
-            <option value='academic'>Academic</option>
-            <option value='professional'>Professional</option>
-          </select>
-        </label>
+        <SelectField
+          label='Learning mode'
+          className='sm:max-w-xs'
+          value={mode}
+          aria-describedby='mode-hint'
+          onValueChange={(next) => {
+            setMode(next);
+            setEnabled(next === 'professional' ? [...modules] : ['certifications']);
+          }}
+          options={learningModes}
+        />
         <p id='mode-hint' className='-mt-2 text-sm text-muted-foreground'>
           Changing the mode resets modules to that mode&apos;s defaults.
         </p>

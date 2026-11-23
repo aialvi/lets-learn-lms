@@ -11,12 +11,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
+import { SelectField } from '@/components/ui/select-field';
 import { LoadingRegion, Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import { FormAlert } from '@/components/ui/form-alert';
 import {
   control,
   fieldLabel,
+  learningModes,
   moduleNames,
   Organization,
   organizationRequest,
@@ -180,13 +182,7 @@ export default function OrganizationsPage() {
                   <input className={control} name='name' required maxLength={120} />
                 </label>
                 <div className='grid gap-4 sm:grid-cols-2'>
-                  <label className={fieldLabel}>
-                    Learning mode
-                    <select className={control} name='mode' defaultValue='professional'>
-                      <option value='professional'>Professional</option>
-                      <option value='academic'>Academic</option>
-                    </select>
-                  </label>
+                  <SelectField label='Learning mode' name='mode' defaultValue='professional' options={learningModes} />
                   <label className={fieldLabel}>
                     Timezone
                     <input

@@ -5,7 +5,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
@@ -26,7 +25,6 @@ const formSchema = z.object({
 export function SignInForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const router = useRouter();
 
   const {
     register,
@@ -50,10 +48,8 @@ export function SignInForm() {
       if (response?.error) {
         setFormError('That username and password combination didn’t match an account. Check both fields and try again.');
       } else {
+        // The sign-in page redirects once the session updates.
         toast.success('You have successfully signed in.');
-        const destination = new URLSearchParams(window.location.search).get('callbackUrl');
-        router.push(destination?.startsWith('/') && !destination.startsWith('//') ? destination : '/dashboard');
-        router.refresh();
       }
     } catch (error) {
       console.error('Sign in error:', error);

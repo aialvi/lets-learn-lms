@@ -6,6 +6,7 @@ import { fetchCourses } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
+import { SelectField } from "@/components/ui/select-field";
 import { LoadingRegion } from "@/components/ui/skeleton";
 import { CourseCard, CourseCardSkeleton, type CourseSummary } from "@/components/courses/course-card";
 import {
@@ -13,6 +14,12 @@ import {
   matchesLength,
   type CourseFilters,
 } from "@/components/courses/filter-sidebar";
+
+const sortOptions = [
+  { value: "popular", label: "Most popular" },
+  { value: "lessons", label: "Most lessons" },
+  { value: "alphabetical", label: "Title A–Z" },
+];
 
 const emptyFilters: CourseFilters = { query: "", lengths: [] };
 
@@ -81,16 +88,14 @@ export function CourseGrid() {
             <label htmlFor={sortId} className="text-sm text-muted-foreground">
               Sort by
             </label>
-            <select
+            <SelectField
               id={sortId}
+              size="sm"
+              className="w-44"
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="h-9 rounded-md border border-input bg-card px-3 text-sm font-medium text-foreground shadow-xs focus-visible:border-ring focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/25"
-            >
-              <option value="popular">Most popular</option>
-              <option value="lessons">Most lessons</option>
-              <option value="alphabetical">A–Z</option>
-            </select>
+              onValueChange={setSortBy}
+              options={sortOptions}
+            />
           </div>
         </div>
 

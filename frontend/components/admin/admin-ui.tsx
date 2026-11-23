@@ -19,6 +19,13 @@ import {
 } from '@/components/ui/alert-dialog';
 import { LoadingRegion, Skeleton } from '@/components/ui/skeleton';
 
+/** Platform roles accepted by the API. */
+export const userRoles = [
+  { value: 'student', label: 'Student', description: 'Takes courses' },
+  { value: 'instructor', label: 'Instructor', description: 'Can be assigned as a course instructor' },
+  { value: 'admin', label: 'Admin', description: 'Manages users, courses, and lessons' },
+];
+
 /** Turns an API/axios error into a sentence a person can act on. */
 export function getErrorMessage(error: unknown, fallback: string): string {
   if (isAxiosError(error)) {

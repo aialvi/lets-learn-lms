@@ -1,5 +1,9 @@
 export const modules = ['teams', 'assessments', 'certifications', 'reminders', 'reports'] as const;
 export const moduleNames: Record<string, string> = { teams: 'Teams & training', assessments: 'Quizzes', certifications: 'Certifications', reminders: 'Reminders', reports: 'Progress reports' };
+export const learningModes = [
+  { value: 'professional', label: 'Professional', description: 'Team training, assessments, and reporting' },
+  { value: 'academic', label: 'Academic', description: 'Course completion and certificates' },
+];
 export interface Organization { id: string; name: string; mode: string; timezone: string; modules: string[]; role: string; email?: { enabled: boolean; configured: boolean } }
 export interface Member { id: string; userId: string; role: string; active: boolean; departmentId: string | null; user: { username: string; email: string }; }
 export interface Department { id: string; name: string }

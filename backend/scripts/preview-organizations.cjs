@@ -4,6 +4,8 @@ const { tmpdir } = require('os');
 const { join, resolve } = require('path');
 const { execFileSync } = require('child_process');
 const root = resolve(__dirname, '..');
+// Override both to run alongside a development server.
+const frontend = process.env.PREVIEW_FRONTEND_URL || 'http://localhost:3000';
 process.env.TRAINING_WORKER_ENABLED = 'false';
 process.env.EMAIL_ENABLED = 'false';
 const { Test } = require('@nestjs/testing');
@@ -24,7 +26,7 @@ async function main() {
   const module = await Test.createTestingModule({ imports: [AppModule] }).overrideProvider(PrismaService).useValue(db).compile();
   app = module.createNestApplication({ logger: ['error', 'warn'] });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
-  app.enableCors({ origin: ['http://localhost:3000', 'http://127.0.0.1:3000'], credentials: true });
+  app.enableCors({ origin: [frontend, 'http://127.0.0.1:3000'], credentials: true });
   await app.init();
   const password = await bcrypt.hash(process.env.PREVIEW_PASSWORD || 'local-preview-only', 10);
   const names = ['Alex Morgan', 'Maya Chen', 'Jordan Lee', 'Samira Rahman', 'Oliver Brooks', 'Aisha Patel'];
@@ -67,8 +69,8 @@ async function main() {
   await training.tick();
   await service.create(users[0], { name: 'Open Learning Campus', mode: 'academic', timezone: 'Asia/Dhaka' });
   writeFileSync(join(directory, 'preview.json'), JSON.stringify({ organizationId: org.id, username: 'alex.morgan', courseIds: courses }));
-  await app.listen(3001, '127.0.0.1');
-  console.log(JSON.stringify({ preview: 'http://localhost:3000', organizationId: org.id, metadata: join(directory, 'preview.json') }));
+  await app.listen(Number(process.env.PREVIEW_PORT || 3001), '127.0.0.1');
+  console.log(JSON.stringify({ preview: frontend, organizationId: org.id, metadata: join(directory, 'preview.json') }));
 }
 async function close() { await app?.close(); await db?.$disconnect(); rmSync(directory, { recursive: true, force: true }); }
 process.on('SIGINT', () => close().then(() => process.exit()));

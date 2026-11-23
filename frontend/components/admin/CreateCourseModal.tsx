@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SelectField } from '@/components/ui/select-field';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FormAlert } from './admin-ui';
@@ -122,24 +122,17 @@ export function CreateCourseModal({ isOpen, onClose, onSubmit, instructors }: Cr
             </Field>
             <Field id='create-course-instructorId' label='Instructor' error={errors.instructorId}>
               {(props) => (
-                <Select
+                <SelectField
+                  {...props}
                   value={formData.instructorId}
                   onValueChange={(instructorId) => {
                     setFormData((prev) => ({ ...prev, instructorId }));
                     if (errors.instructorId) setErrors((prev) => ({ ...prev, instructorId: '' }));
                   }}
-                >
-                  <SelectTrigger {...props} className='w-full'>
-                    <SelectValue placeholder='Select instructor' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {instructors.map((instructor) => (
-                      <SelectItem key={instructor.id} value={instructor.id.toString()}>
-                        {instructor.username}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder='Select instructor'
+                  emptyMessage='No instructors available'
+                  options={instructors.map((i) => ({ value: i.id.toString(), label: i.username }))}
+                />
               )}
             </Field>
           </div>

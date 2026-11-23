@@ -2,7 +2,7 @@
 
 A learning management system for self-paced courses and organization training. Built with Next.js, NestJS, Prisma, and SQLite, Let's Learn brings course delivery, progress tracking, assessments, and completion certificates into one application.
 
-![Learner dashboard with course covers and progress](docs/screenshots/learner-dashboard.png)
+![Let's Learn: learner dashboard on desktop with a course page on mobile](docs/screenshots/hero.jpg)
 
 ## Capabilities
 
@@ -22,25 +22,47 @@ The public Academic catalog and organization training use separate workflows. Pr
 
 ## Product tour
 
-The screenshots below were captured from the running application using the existing `lyxodyhaxi` account. Course enrollments, completion history, watch time, and the certificate are illustrative sample data.
+The interface in every image is captured from the running application with seeded demo accounts and sample data; backdrops, device frames, headlines, and enlarged menus are added by the screenshot script.
 
 ### Course catalog
 
-Browse administrator-authored courses with locally stored Unsplash cover images, descriptions, lesson counts, and enrollment totals.
+Browse administrator-authored courses with cover images, search, length filters, and sorting.
 
-![Course catalog with sample courses and Unsplash photography](docs/screenshots/learning-catalog.png)
+![Course catalog with the sort menu open](docs/screenshots/catalog.jpg)
 
 ### Course overview
 
 Review a course description and curriculum, then enroll or continue learning.
 
-![Modern Web Development course overview](docs/screenshots/course-overview.png)
+![Modern Web Development course overview](docs/screenshots/course-overview.jpg)
 
 ### Lesson workspace
 
 Read lesson material, navigate the curriculum, and track completed lessons.
 
-![Lesson workspace with curriculum and completion progress](docs/screenshots/lesson-workspace.png)
+![Lesson workspace with curriculum and completion progress](docs/screenshots/lesson-workspace.jpg)
+
+### Certificates
+
+Download a completion certificate when every lesson is done.
+
+![Certificate of completion for Data Analysis Essentials](docs/screenshots/certificate.jpg)
+
+### Team training
+
+Filter progress by employee, department, team, course, or status, and export it as CSV.
+
+![Organization progress report with the status filter open](docs/screenshots/team-progress.jpg)
+
+### People and roles
+
+Invite members, assign departments, and choose roles with their responsibilities spelled out.
+
+![Organization members with the role menu open](docs/screenshots/people-and-roles.jpg)
+
+### Dark mode and mobile
+
+![Dashboard in dark mode on desktop and mobile](docs/screenshots/dark-and-mobile.jpg)
 
 ## Architecture
 
@@ -56,10 +78,10 @@ flowchart LR
 
 | Layer | Main technologies |
 | --- | --- |
-| Frontend | Next.js 15, React 19, TypeScript, Tailwind CSS 4, Radix UI |
+| Frontend | Next.js 16, React 19, TypeScript 6, Tailwind CSS 4, Radix UI |
 | Authentication | NextAuth credentials sessions, Passport JWT, bcrypt |
-| Backend | NestJS 11, TypeScript, Swagger/OpenAPI |
-| Persistence | Prisma 6.5 and SQLite |
+| Backend | NestJS 12, TypeScript 6, Swagger/OpenAPI |
+| Persistence | Prisma 6.19 and SQLite |
 | Verification | Jest, Supertest, Playwright |
 
 ```text
@@ -83,8 +105,8 @@ docs/
 
 ### Requirements
 
-- Node.js **22**; the repository's `.nvmrc` selects the supported version.
-- npm for the backend and pnpm for the frontend.
+- Node.js **24** (LTS); the repository's `.nvmrc` selects the supported version.
+- pnpm for both the backend and the frontend.
 - Python 3 for the SQLite migration integration tests.
 - An OpenRouter API key for live study-coach responses; other learning features work without it.
 
@@ -100,9 +122,9 @@ cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env.local
 
 cd backend
-npm install
-npx prisma generate
-npm run db:migrate
+pnpm install
+pnpm exec prisma generate
+pnpm run db:migrate
 
 cd ../frontend
 pnpm install
@@ -130,7 +152,7 @@ Run each process in a separate terminal:
 ```bash
 # Terminal 1
 cd backend
-npm run start:dev
+pnpm start:dev
 ```
 
 ```bash
@@ -145,7 +167,7 @@ pnpm dev
 | Backend | http://localhost:3001 |
 | Swagger API reference | http://localhost:3001/api |
 
-Backend npm startup commands apply pending migrations before starting NestJS and stop if migration fails. After a schema change, regenerate the Prisma client and restart any already-running backend process.
+Backend startup commands apply pending migrations before starting NestJS and stop if migration fails. After a schema change, regenerate the Prisma client and restart any already-running backend process.
 
 ### Create the first administrator
 
@@ -153,7 +175,7 @@ Register a learner through `/auth/signup`. For administration, set `ADMIN_EMAIL`
 
 ```bash
 cd backend
-npm run admin:create
+pnpm admin:create
 ```
 
 The password must contain at least 12 characters. The utility creates a new administrator and refuses to overwrite an existing account. There are no shared default administrator credentials.
@@ -164,7 +186,7 @@ The sample utility requires an existing learner account and an existing platform
 
 ```bash
 cd backend
-npm run seed:sample -- lyxodyhaxi
+pnpm seed:sample alex.morgan
 ```
 
 | Course | Seeded completion |
@@ -182,14 +204,25 @@ Sample covers are downloaded from Unsplash and served from `frontend/public/imag
 
 ### Refresh the README screenshots
 
-Start the populated backend and frontend first, then run:
+Seed a demo learner and start the backend and frontend, then run:
 
 ```bash
 cd frontend
-pnpm screenshots:readme lyxodyhaxi
+pnpm screenshots:readme alex.morgan
 ```
 
-Playwright Chromium must be installed (`pnpm exec playwright install chromium`). This local-only utility reads the configured development database and creates a temporary authenticated browser session for the selected account without changing its password. It captures real pages and API responses, checks images and completion states, and checks mobile overflow. Browser sessions are discarded when the run completes; no credentials or session files are written to the documentation directory.
+Playwright Chromium must be installed (`pnpm exec playwright install chromium`). The script reads the configured development database, creates a temporary authenticated browser session for the named account without changing its password, and fails on broken images, API errors, or mobile overflow. It then composes 1270×760 slides at 2x; layouts live in `frontend/scripts/launch-slides.mjs`. The images show that account's name and data, so use a demo account. Session files are never written to disk.
+
+The team slides use `pnpm run preview:organizations`, which serves a temporary database. Run it on its own port alongside a second frontend, and pass that frontend's address:
+
+```bash
+# backend
+PREVIEW_PORT=3012 PREVIEW_FRONTEND_URL=http://localhost:3013 pnpm run preview:organizations
+
+# frontend
+NEXT_BUILD_DIR=.next-readme NEXT_PUBLIC_API_URL=http://localhost:3012 NEXTAUTH_URL=http://localhost:3013 pnpm dev -p 3013
+SCREENSHOT_ORG_URL=http://localhost:3013 pnpm screenshots:readme alex.morgan
+```
 
 ## Organization training
 
@@ -242,11 +275,12 @@ Protected API requests use `Authorization: Bearer <access_token>`. Organization 
 
 ```bash
 cd backend
-npm test -- --runInBand
-npm run test:e2e -- --runInBand --watchman=false
-npm run build
+pnpm test --runInBand
+pnpm test:e2e --runInBand --watchman=false
+pnpm build
 
 cd ../frontend
+pnpm lint
 pnpm build
 ```
 
@@ -254,11 +288,11 @@ Integration tests use temporary databases and cover migrations, organization iso
 
 ## Deployment
 
-1. Build both applications with Node 22 and install dependencies for the deployment's CPU architecture.
+1. Build both applications with Node 24 and install dependencies for the deployment's CPU architecture.
 2. Configure `JWT_SECRET`, `NEXTAUTH_SECRET`, frontend/API URLs, and optional provider credentials.
 3. Persist and back up `backend/prisma/dev.db`; the current Prisma schema uses that SQLite file directly.
-4. Run `npx prisma generate` and `npm run db:migrate` from `backend`. Keep the Prisma CLI available if using the npm startup migration hooks.
-5. Run `npm run start:prod` in `backend` and `pnpm start` in `frontend`, behind your HTTPS reverse proxy.
+4. Run `pnpm exec prisma generate` and `pnpm run db:migrate` from `backend`. Keep the Prisma CLI available if using the startup migration hooks.
+5. Run `pnpm start:prod` in `backend` and `pnpm start` in `frontend`, behind your HTTPS reverse proxy.
 6. Enable the training worker on one replica and verify SMTP in a staging mailbox before enabling email.
 
 The organization migration moves existing learning into **Academic Learning**, preserves courses, enrollments, and video progress, and maps existing roles to memberships. Historical certificates use lesson-completion evidence and retain an unknown issue date rather than inventing one. Back up an established database before applying migrations.

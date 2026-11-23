@@ -27,6 +27,7 @@ import { Badge, type BadgeProps } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
+import { SelectField } from '@/components/ui/select-field';
 import { LoadingRegion, Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import { FormAlert } from '@/components/admin/admin-ui';
@@ -326,20 +327,13 @@ export default function OrganizationPage({ params }: { params: Promise<{ id: str
             <p className='text-sm text-muted-foreground'>All deadlines are shown in {org.timezone}.</p>
           </div>
           {data.organizations.length > 1 && (
-            <label className={`${fieldLabel} sm:w-64`}>
-              Switch organization
-              <select
-                className={control}
-                value={id}
-                onChange={(e) => router.push(`/organizations/${e.target.value}`)}
-              >
-                {data.organizations.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <SelectField
+              label='Switch organization'
+              className='sm:w-64'
+              value={id}
+              onValueChange={(next) => next !== id && router.push(`/organizations/${next}`)}
+              options={data.organizations.map((o) => ({ value: o.id, label: o.name }))}
+            />
           )}
         </header>
 
@@ -550,28 +544,27 @@ export default function OrganizationPage({ params }: { params: Promise<{ id: str
                       </p>
                     </div>
                     <div className='grid gap-4 md:grid-cols-3'>
-                      <label className={fieldLabel}>
-                        Course
-                        <select name='courseId' className={control} required>
-                          <option value=''>Choose course</option>
-                          {data.courses.map((course) => (
-                            <option value={course.id} key={course.id}>
-                              {course.title}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <label className={fieldLabel}>
-                        Team <span className='font-normal text-muted-foreground'>(optional)</span>
-                        <select name='teamId' className={control}>
-                          <option value=''>Individual employees only</option>
-                          {assignableTeams.map((team) => (
-                            <option value={team.id} key={team.id}>
-                              {team.name}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
+                      <SelectField
+                        label='Course'
+                        name='courseId'
+                        required
+                        requiredMessage='Choose a course to assign.'
+                        placeholder='Choose course'
+                        emptyMessage='Create a course first'
+                        options={data.courses.map((course) => ({ value: course.id, label: course.title }))}
+                      />
+                      <SelectField
+                        label={
+                          <>
+                            Team <span className='font-normal text-muted-foreground'>(optional)</span>
+                          </>
+                        }
+                        name='teamId'
+                        options={[
+                          { value: '', label: 'Individual employees only' },
+                          ...assignableTeams.map((team) => ({ value: team.id, label: team.name })),
+                        ]}
+                      />
                       <label className={fieldLabel}>
                         Deadline <span className='font-normal text-muted-foreground'>(your device timezone)</span>
                         <input className={control} name='dueAt' type='datetime-local' />
@@ -772,24 +765,24 @@ export default function OrganizationPage({ params }: { params: Promise<{ id: str
                     {
                       key: 'status',
                       label: 'Status',
-                      values: ['in-progress', 'completed', 'overdue', 'cancelled'].map((value) => ({ id: value, name: value })),
+                      values: [
+                        { id: 'in-progress', name: 'In progress' },
+                        { id: 'completed', name: 'Completed' },
+                        { id: 'overdue', name: 'Overdue' },
+                        { id: 'cancelled', name: 'Cancelled' },
+                      ],
                     },
                   ].map((filter) => (
-                    <label key={filter.key} className={fieldLabel}>
-                      {filter.label}
-                      <select
-                        className={`${control} capitalize`}
-                        value={filters[filter.key] || ''}
-                        onChange={(e) => setFilters({ ...filters, [filter.key]: e.target.value })}
-                      >
-                        <option value=''>All</option>
-                        {filter.values.map((value) => (
-                          <option key={value.id} value={value.id}>
-                            {value.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                    <SelectField
+                      key={filter.key}
+                      label={filter.label}
+                      value={filters[filter.key] || ''}
+                      onValueChange={(value) => setFilters({ ...filters, [filter.key]: value })}
+                      options={[
+                        { value: '', label: 'All' },
+                        ...filter.values.map((value) => ({ value: value.id, label: value.name })),
+                      ]}
+                    />
                   ))}
                 </div>
               </fieldset>

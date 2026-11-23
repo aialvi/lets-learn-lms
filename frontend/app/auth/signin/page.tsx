@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { SignInForm } from '@/components/auth/sign-in-form';
 import { Footer } from '@/components/layout/footer';
 import { MainNav } from '@/components/layout/main-nav';
+import { callbackDestination } from '@/lib/callback-url';
 import { LoadingRegion, Skeleton } from '@/components/ui/skeleton';
 
 export default function SignInPage() {
@@ -14,7 +15,9 @@ export default function SignInPage() {
 
   useEffect(() => {
     if (status === 'authenticated' && session) {
-      router.push('/dashboard');
+      // The only redirect after sign-in, so it can't race the form. replace() keeps
+      // Back from returning to a page that would redirect forward again.
+      router.replace(callbackDestination(window.location.search, window.location.origin));
     }
   }, [status, session, router]);
 
@@ -26,7 +29,7 @@ export default function SignInPage() {
           <SignInForm />
         ) : (
           <LoadingRegion
-            label={status === 'authenticated' ? 'Redirecting to your dashboard' : 'Checking your session'}
+            label={status === 'authenticated' ? 'Signing you in' : 'Checking your session'}
             className='surface w-full max-w-md space-y-6 p-6 sm:p-8'
           >
             <div className='space-y-3'>

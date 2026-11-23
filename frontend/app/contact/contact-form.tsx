@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { SelectField } from '@/components/ui/select-field';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const SUPPORT_EMAIL = 'support@letslearn.com';
@@ -118,19 +119,16 @@ export function ContactForm({ departments }: { departments: { name: string }[] }
         <FieldError id='email-error' message={errors.email} />
       </div>
       <div className='space-y-2'>
-        <Label htmlFor='department'>Department</Label>
-        <select
+        <Label htmlFor='department'>
+          Department <span className='font-normal text-muted-foreground'>(optional)</span>
+        </Label>
+        <SelectField
           {...fieldProps('department')}
-          defaultValue=''
-          className='h-10 w-full rounded-md border border-input bg-card px-3 text-base shadow-xs focus-visible:border-ring focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/25 md:text-sm'
-        >
-          <option value=''>Select a department (optional)</option>
-          {departments.map((dept) => (
-            <option key={dept.name} value={dept.name}>
-              {dept.name}
-            </option>
-          ))}
-        </select>
+          options={[
+            { value: '', label: 'No preference' },
+            ...departments.map((dept) => ({ value: dept.name, label: dept.name })),
+          ]}
+        />
       </div>
       <div className='space-y-2'>
         <Label htmlFor='subject'>

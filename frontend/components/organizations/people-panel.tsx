@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
+import { SelectField } from '@/components/ui/select-field';
 import { Spinner } from '@/components/ui/spinner';
 import { FormAlert } from '@/components/ui/form-alert';
 import { ConfirmAction } from '@/components/organizations/confirm-action';
@@ -13,7 +14,12 @@ import { check, control, Department, fieldLabel, Member, panel, Team } from '@/l
 
 type Action = (path: string, body: unknown, method?: string) => Promise<unknown>;
 
-const roles = ['learner', 'manager', 'instructor', 'admin'];
+const roles = [
+  { value: 'learner', label: 'Learner', description: 'Completes training and earns certificates' },
+  { value: 'manager', label: 'Manager', description: 'Assigns training and views team progress' },
+  { value: 'instructor', label: 'Instructor', description: 'Creates and edits courses' },
+  { value: 'admin', label: 'Admin', description: 'Manages members, courses, and settings' },
+];
 
 export function PeoplePanel({
   members,
@@ -35,6 +41,8 @@ export function PeoplePanel({
   const [inviteUrl, setInviteUrl] = useState('');
   const [copied, setCopied] = useState(false);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
+
+  const departmentOptions = departments.map((d) => ({ value: d.id, label: d.name }));
 
   const run = async (fn: () => Promise<unknown>) => {
     setBusy(true);
@@ -92,16 +100,7 @@ export function PeoplePanel({
               Email
               <input className={control} name='email' type='email' autoComplete='off' required />
             </label>
-            <label className={fieldLabel}>
-              Organization role
-              <select className={`${control} capitalize`} name='role' defaultValue='learner'>
-                {roles.map((role) => (
-                  <option key={role} value={role}>
-                    {role}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <SelectField label='Organization role' name='role' defaultValue='learner' options={roles} />
             <Button disabled={busy} className='h-10'>
               {busy ? <Spinner /> : <UserPlus aria-hidden='true' />}
               Create invitation
@@ -180,19 +179,15 @@ export function PeoplePanel({
                     </td>
                     <td className='px-4 py-3'>
                       {admin ? (
-                        <select
+                        <SelectField
                           aria-label={`Role for ${member.user.username}`}
-                          className={`${control} mt-0 min-w-32 capitalize`}
+                          className='min-w-32'
+                          size='sm'
                           disabled={busy}
                           value={member.role}
-                          onChange={(e) => void run(() => act(`/members/${member.id}`, { role: e.target.value }, 'PATCH'))}
-                        >
-                          {roles.map((role) => (
-                            <option key={role} value={role}>
-                              {role}
-                            </option>
-                          ))}
-                        </select>
+                          onValueChange={(role) => void run(() => act(`/members/${member.id}`, { role }, 'PATCH'))}
+                          options={roles}
+                        />
                       ) : (
                         <span className='capitalize'>{member.role}</span>
                       )}
@@ -200,24 +195,19 @@ export function PeoplePanel({
                     {teamsEnabled && (
                       <td className='px-4 py-3'>
                         {admin ? (
-                          <select
-                            className={`${control} mt-0 min-w-36`}
+                          <SelectField
                             aria-label={`Department for ${member.user.username}`}
+                            className='min-w-36'
+                            size='sm'
                             disabled={busy}
                             value={member.departmentId || ''}
-                            onChange={(e) =>
+                            onValueChange={(departmentId) =>
                               void run(() =>
-                                act(`/members/${member.id}`, { departmentId: e.target.value || null }, 'PATCH')
+                                act(`/members/${member.id}`, { departmentId: departmentId || null }, 'PATCH')
                               )
                             }
-                          >
-                            <option value=''>Unassigned</option>
-                            {departments.map((department) => (
-                              <option key={department.id} value={department.id}>
-                                {department.name}
-                              </option>
-                            ))}
-                          </select>
+                            options={[{ value: '', label: 'Unassigned' }, ...departmentOptions]}
+                          />
                         ) : (
                           departments.find((d) => d.id === member.departmentId)?.name || '—'
                         )}
@@ -369,17 +359,12 @@ export function PeoplePanel({
                   Team name
                   <input className={control} name='name' required defaultValue={editingTeam?.name} />
                 </label>
-                <label className={fieldLabel}>
-                  Department
-                  <select className={control} name='departmentId' defaultValue={editingTeam?.departmentId || ''}>
-                    <option value=''>No department</option>
-                    {departments.map((department) => (
-                      <option key={department.id} value={department.id}>
-                        {department.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <SelectField
+                  label='Department'
+                  name='departmentId'
+                  defaultValue={editingTeam?.departmentId || ''}
+                  options={[{ value: '', label: 'No department' }, ...departmentOptions]}
+                />
                 <fieldset className='space-y-2'>
                   <legend className='mb-2 text-sm font-medium'>Members and managers</legend>
                   <ul className='divide-y rounded-lg border'>
