@@ -1,4 +1,4 @@
-# Let's Learn
+# Let's Learn: self-hosted LMS built with Next.js and NestJS
 
 A learning management system for self-paced courses and organization training. Built with Next.js, NestJS, Prisma, and SQLite, Let's Learn brings course delivery, progress tracking, assessments, and completion certificates into one application.
 
@@ -298,3 +298,7 @@ Integration tests use temporary databases and cover migrations, organization iso
 The organization migration moves existing learning into **Academic Learning**, preserves courses, enrollments, and video progress, and maps existing roles to memberships. Historical certificates use lesson-completion evidence and retain an unknown issue date rather than inventing one. Back up an established database before applying migrations.
 
 SQLite is the current deployment model; shared-database multi-replica operation requires further infrastructure work. Subscription billing and external accreditation are outside the implemented feature set.
+
+## License
+
+[MIT](LICENSE). Sample course photography is covered by the Unsplash License; see [image credits](docs/image-credits.md).
